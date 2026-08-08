@@ -25,6 +25,7 @@ namespace ClinicManagementApp.Middlewares
                 DoctorNotFoundException => StatusCodes.Status404NotFound,
                 PatientNotFoundException => StatusCodes.Status404NotFound,
                 AppointmentNotFoundException => StatusCodes.Status404NotFound,
+                PatientRecordNotFoundException => StatusCodes.Status404NotFound,
                 _ => StatusCodes.Status500InternalServerError
             };
 

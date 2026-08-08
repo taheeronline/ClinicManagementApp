@@ -22,6 +22,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddScoped<IDoctorService, DoctorService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IPatientRecordService, PatientRecordService>();
 
 builder.Services.AddControllers(); // 1. ADD THIS before builder.Build()
 

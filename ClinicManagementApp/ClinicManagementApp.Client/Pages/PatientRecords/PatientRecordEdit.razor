@@ -1,0 +1,140 @@
+﻿@page "/patientrecords/edit"
+@inject ClinicManagement.Client.Services.PatientRecordClientService RecordService
+@inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>Doctor's Consultation Dashboard</h3>
+
+@if (isLoading)
+{
+    <p><em>Loading data...</em></p>
+}
+else
+{
+    <EditForm Model="consultation" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">1. Select Scheduled Appointment</div>
+            <div class="card-body">
+                <InputSelect @bind-Value="consultation.AppointmentId" class="form-select" @oninput="OnAppointmentSelected">
+                    <option value="0">-- Select a Scheduled Appointment --</option>
+                    @foreach (var a in scheduledAppointments)
+                    {
+                        <option value="@a.Id">@a.AppointmentDate.ToString("g") - Patient: @a.PatientName</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => consultation.AppointmentId)" />
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">2. Clinical Notes</div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label>Symptoms</label>
+                    <InputTextArea @bind-Value="consultation.Symptoms" class="form-control" rows="2" />
+                    <ValidationMessage For="@(() => consultation.Symptoms)" />
+                </div>
+                <div class="mb-3">
+                    <label>Diagnosis</label>
+                    <InputText @bind-Value="consultation.Diagnosis" class="form-control" />
+                    <ValidationMessage For="@(() => consultation.Diagnosis)" />
+                </div>
+                <div class="mb-3">
+                    <label>Additional Notes</label>
+                    <InputTextArea @bind-Value="consultation.AdditionalNotes" class="form-control" rows="2" />
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <span>3. Prescriptions</span>
+                <button type="button" class="btn btn-sm btn-dark" @onclick="AddMedicineRow">+ Add Medicine</button>
+            </div>
+            <div class="card-body">
+                @if (consultation.Prescriptions.Count == 0)
+                {
+                    <p class="text-muted">No medicines added yet.</p>
+                }
+                else
+                {
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Medicine</th>
+                                <th>Dosage</th>
+                                <th>Duration</th>
+                                <th>Instructions</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var med in consultation.Prescriptions)
+                            {
+                                <tr>
+                                    <td><InputText @bind-Value="med.MedicineName" class="form-control form-control-sm" placeholder="Name" /></td>
+                                    <td><InputText @bind-Value="med.Dosage" class="form-control form-control-sm" placeholder="e.g. 500mg" /></td>
+                                    <td><InputText @bind-Value="med.Duration" class="form-control form-control-sm" placeholder="e.g. 5 Days" /></td>
+                                    <td><InputText @bind-Value="med.Instructions" class="form-control form-control-sm" placeholder="e.g. After food" /></td>
+                                    <td><button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveMedicineRow(med)">X</button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success btn-lg w-100">Complete Consultation & Ready for Billing</button>
+    </EditForm>
+}
+
+@code {
+    private ClinicManagement.Shared.DTOs.ConsultationSaveDto consultation = new();
+    private List<ClinicManagement.Shared.DTOs.AppointmentDto> scheduledAppointments = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Only load appointments that are currently "Scheduled" (not yet completed/closed)
+        var allAppointments = await AppointmentService.GetAppointmentsAsync();
+        scheduledAppointments = allAppointments
+            .Where(a => a.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+            .ToList();
+
+        isLoading = false;
+    }
+
+    private void OnAppointmentSelected(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int appointmentId) && appointmentId > 0)
+        {
+            var appt = scheduledAppointments.FirstOrDefault(a => a.Id == appointmentId);
+            if (appt != null)
+            {
+                consultation.PatientId = appt.PatientId; // Auto-set the patient ID based on the appointment
+            }
+        }
+    }
+
+    private void AddMedicineRow()
+    {
+        consultation.Prescriptions.Add(new ClinicManagement.Shared.DTOs.PrescriptionItemDto());
+    }
+
+    private void RemoveMedicineRow(ClinicManagement.Shared.DTOs.PrescriptionItemDto item)
+    {
+        consultation.Prescriptions.Remove(item);
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (consultation.AppointmentId == 0) return;
+
+        await RecordService.CompleteConsultationAsync(consultation);
+        NavigationManager.NavigateTo("/patientrecords");
+    }
+}

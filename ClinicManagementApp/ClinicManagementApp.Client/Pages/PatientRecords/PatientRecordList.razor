@@ -1,0 +1,66 @@
+﻿@* ClinicManagement.Client/Pages/PatientRecords/PatientRecordList.razor *@
+@page "/patientrecords"
+@inject ClinicManagement.Client.Services.PatientRecordClientService RecordService
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>Patient Records</h3>
+
+<a href="/patientrecords/edit" class="btn btn-primary mb-3">Add New Record</a>
+
+@if (records == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!records.Any())
+{
+    <p>No patient records found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date Added</th>
+                <th>Patient Name</th>
+                <th>Appointment Date</th>
+                <th>Diagnosis</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in records)
+            {
+                <tr>
+                    <td>@record.DateAdded.ToString("d")</td>
+                    <td>@record.PatientName</td>
+                    <td>@record.AppointmentDate.ToString("g")</td>
+                    <td>@record.Diagnosis</td>
+                    <td>
+                        <a href="/patientrecords/edit/@record.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <button @onclick="() => DeleteRecord(record.Id)" class="btn btn-sm btn-danger">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ClinicManagement.Shared.DTOs.PatientRecordDto>? records;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecords();
+    }
+
+    private async Task LoadRecords()
+    {
+        records = await RecordService.GetRecordsAsync();
+    }
+
+    private async Task DeleteRecord(int id)
+    {
+        await RecordService.DeleteRecordAsync(id);
+        await LoadRecords(); 
+    }
+}

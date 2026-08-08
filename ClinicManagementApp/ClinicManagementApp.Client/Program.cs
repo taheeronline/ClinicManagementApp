@@ -7,5 +7,6 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<DoctorClientService>();
 builder.Services.AddScoped<PatientClientService>();
 builder.Services.AddScoped<AppointmentClientService>();
+builder.Services.AddScoped<PatientRecordClientService>();
 
 await builder.Build().RunAsync();
