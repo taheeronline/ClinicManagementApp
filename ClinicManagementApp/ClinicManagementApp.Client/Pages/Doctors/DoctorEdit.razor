@@ -1,0 +1,70 @@
+﻿@* ClinicManagement.Client/Pages/Doctors/DoctorEdit.razor *@
+@page "/doctors/edit"
+@page "/doctors/edit/{Id:int}"
+@inject ClinicManagement.Client.Services.DoctorClientService DoctorService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>@(Id.HasValue ? "Edit Doctor" : "Add New Doctor")</h3>
+
+<EditForm Model="doctor" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>First Name</label>
+        <InputText @bind-Value="doctor.FirstName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Last Name</label>
+        <InputText @bind-Value="doctor.LastName" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Speciality</label>
+        <InputText @bind-Value="doctor.Speciality" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Consultation Fee</label>
+        <InputNumber @bind-Value="doctor.ConsultationFee" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Phone Number</label>
+        <InputText @bind-Value="doctor.PhoneNumber" class="form-control" />
+        <ValidationMessage For="@(() => doctor.PhoneNumber)" />
+    </div>
+    <button type="submit" class="btn btn-success">Save</button>
+    <a href="/doctors" class="btn btn-secondary">Cancel</a>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private ClinicManagement.Shared.DTOs.DoctorDto doctor = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            doctor = await DoctorService.GetDoctorByIdAsync(Id.Value);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Id.HasValue)
+        {
+            await DoctorService.UpdateDoctorAsync(Id.Value, doctor);
+        }
+        else
+        {
+            await DoctorService.CreateDoctorAsync(doctor);
+        }
+
+        NavigationManager.NavigateTo("/doctors");
+    }
+}

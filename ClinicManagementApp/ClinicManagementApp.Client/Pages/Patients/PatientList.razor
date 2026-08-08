@@ -1,0 +1,66 @@
+﻿@* ClinicManagement.Client/Pages/Patients/PatientList.razor *@
+@page "/patients"
+@inject ClinicManagement.Client.Services.PatientClientService PatientService
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>Patients Directory</h3>
+
+<a href="/patients/edit" class="btn btn-primary mb-3">Register New Patient</a>
+
+@if (patients == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!patients.Any())
+{
+    <p>No patients found. Please register one.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Contact</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var patient in patients)
+            {
+                <tr>
+                    <td>@patient.FullName</td>
+                    <td>@patient.Age</td>
+                    <td>@patient.Gender</td>
+                    <td>@patient.ContactNumber</td>
+                    <td>
+                        <a href="/patients/edit/@patient.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <button @onclick="() => DeletePatient(patient.Id)" class="btn btn-sm btn-danger">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ClinicManagement.Shared.DTOs.PatientDto>? patients;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPatients();
+    }
+
+    private async Task LoadPatients()
+    {
+        patients = await PatientService.GetPatientsAsync();
+    }
+
+    private async Task DeletePatient(int id)
+    {
+        await PatientService.DeletePatientAsync(id);
+        await LoadPatients();
+    }
+}

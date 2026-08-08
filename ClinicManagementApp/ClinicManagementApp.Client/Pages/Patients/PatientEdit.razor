@@ -1,0 +1,92 @@
+﻿@* ClinicManagement.Client/Pages/Patients/PatientEdit.razor *@
+@page "/patients/edit"
+@page "/patients/edit/{Id:int}"
+@inject ClinicManagement.Client.Services.PatientClientService PatientService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>@(Id.HasValue ? "Edit Patient Details" : "Register New Patient")</h3>
+
+<EditForm Model="patient" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label>First Name</label>
+            <InputText @bind-Value="patient.FirstName" class="form-control" />
+            <ValidationMessage For="@(() => patient.FirstName)" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label>Last Name</label>
+            <InputText @bind-Value="patient.LastName" class="form-control" />
+            <ValidationMessage For="@(() => patient.LastName)" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label>Date of Birth</label>
+            <InputDate @bind-Value="patient.DateOfBirth" class="form-control" />
+            <ValidationMessage For="@(() => patient.DateOfBirth)" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label>Gender</label>
+            <InputSelect @bind-Value="patient.Gender" class="form-control">
+                <option value="">Select Gender...</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => patient.Gender)" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label>Contact Number</label>
+        <InputText @bind-Value="patient.ContactNumber" class="form-control" />
+        <ValidationMessage For="@(() => patient.ContactNumber)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Address</label>
+        <InputTextArea @bind-Value="patient.Address" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Medical History (Optional)</label>
+        <InputTextArea @bind-Value="patient.MedicalHistory" class="form-control" rows="3" />
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Patient</button>
+    <a href="/patients" class="btn btn-secondary">Cancel</a>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private ClinicManagement.Shared.DTOs.PatientDto patient = new() { DateOfBirth = DateTime.Today.AddYears(-20) }; // Default to an adult
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            patient = await PatientService.GetPatientByIdAsync(Id.Value);
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (Id.HasValue)
+        {
+            await PatientService.UpdatePatientAsync(Id.Value, patient);
+        }
+        else
+        {
+            await PatientService.CreatePatientAsync(patient);
+        }
+
+        NavigationManager.NavigateTo("/patients");
+    }
+}

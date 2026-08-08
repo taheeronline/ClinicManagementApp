@@ -1,0 +1,79 @@
+﻿@page "/appointments"
+@inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>Appointments</h3>
+
+<a href="/appointments/edit" class="btn btn-primary mb-3">Book New Appointment</a>
+
+@if (appointments == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!appointments.Any())
+{
+    <p>No appointments found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var appt in appointments)
+            {
+                <tr>
+                    <td>@appt.AppointmentDate.ToString("g")</td>
+                    <td>@appt.PatientName</td>
+                    <td>@appt.DoctorName</td>
+                    <td>
+                        <span class="badge @GetStatusBadgeClass(appt.Status)">
+                            @appt.Status.ToString()
+                        </span>
+                    </td>
+                    <td>
+                        <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <button @onclick="() => DeleteAppointment(appt.Id)" class="btn btn-sm btn-danger">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ClinicManagement.Shared.DTOs.AppointmentDto>? appointments;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAppointments();
+    }
+
+    private async Task LoadAppointments()
+    {
+        appointments = await AppointmentService.GetAppointmentsAsync();
+    }
+
+    private async Task DeleteAppointment(int id)
+    {
+        await AppointmentService.DeleteAppointmentAsync(id);
+        await LoadAppointments();
+    }
+
+    // Helper method to color-code the status badges
+    private string GetStatusBadgeClass(ClinicManagement.Shared.Enums.AppointmentStatus status) => status switch
+    {
+        ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled => "bg-primary",
+        ClinicManagement.Shared.Enums.AppointmentStatus.Completed => "bg-success",
+        ClinicManagement.Shared.Enums.AppointmentStatus.Cancelled => "bg-danger",
+        ClinicManagement.Shared.Enums.AppointmentStatus.NoShow => "bg-secondary",
+        _ => "bg-dark"
+    };
+}

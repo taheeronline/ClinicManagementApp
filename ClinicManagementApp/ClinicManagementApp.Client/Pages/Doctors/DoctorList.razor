@@ -1,0 +1,65 @@
+﻿@* ClinicManagement.Client/Pages/Doctors/DoctorList.razor *@
+@page "/doctors"
+@inject ClinicManagement.Client.Services.DoctorClientService DoctorService
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>Doctors Directory</h3>
+
+<a href="/doctors/edit" class="btn btn-primary mb-3">Add New Doctor</a>
+
+@if (doctors == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!doctors.Any())
+{
+    <p>No doctors found. Please add one.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Speciality</th>
+                <th>Consultation Fee</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var doctor in doctors)
+            {
+                <tr>
+                    <td>@doctor.FullName</td>
+                    <td>@doctor.Speciality</td>
+                    <td>@doctor.ConsultationFee.ToString("C")</td>
+                    <td>
+                        <a href="/doctors/edit/@doctor.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <button @onclick="() => DeleteDoctor(doctor.Id)" class="btn btn-sm btn-danger">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ClinicManagement.Shared.DTOs.DoctorDto>? doctors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDoctors();
+    }
+
+    private async Task LoadDoctors()
+    {
+        doctors = await DoctorService.GetDoctorsAsync();
+    }
+
+    private async Task DeleteDoctor(int id)
+    {
+        // In a real app, you might want to add a JS confirm dialog here
+        await DoctorService.DeleteDoctorAsync(id);
+        await LoadDoctors(); // Refresh the list
+    }
+}

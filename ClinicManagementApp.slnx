@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ClinicManagement.Shared/ClinicManagement.Shared.csproj" />
+  <Project Path="ClinicManagementApp/ClinicManagementApp.Client/ClinicManagementApp.Client.csproj" />
+  <Project Path="ClinicManagementApp/ClinicManagementApp/ClinicManagementApp.csproj" />
+</Solution>

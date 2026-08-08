@@ -1,0 +1,125 @@
+﻿@page "/appointments/edit"
+@page "/appointments/edit/{Id:int}"
+@inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
+@inject ClinicManagement.Client.Services.DoctorClientService DoctorService
+@inject ClinicManagement.Client.Services.PatientClientService PatientService
+@inject NavigationManager NavigationManager
+@using ClinicManagement.Shared.Enums
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>@(Id.HasValue ? "Edit Appointment" : "Book Appointment")</h3>
+
+@if (isLoading)
+{
+    <p><em>Loading form data...</em></p>
+}
+else
+{
+    <EditForm Model="appointment" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Select Patient</label>
+                <InputSelect @bind-Value="appointment.PatientId" class="form-select">
+                    <option value="0">-- Select a Patient --</option>
+                    @foreach (var p in patients)
+                    {
+                        <option value="@p.Id">@p.FullName</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => appointment.PatientId)" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Select Doctor</label>
+                <InputSelect @bind-Value="appointment.DoctorId" class="form-select">
+                    <option value="0">-- Select a Doctor --</option>
+                    @foreach (var d in doctors)
+                    {
+                        <option value="@d.Id">@d.FullName (@d.Speciality)</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="@(() => appointment.DoctorId)" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Appointment Date & Time</label>
+                <!-- Type="datetime-local" renders a clean calendar/clock picker in HTML5 -->
+                <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="appointment.AppointmentDate" class="form-control" />
+                <ValidationMessage For="@(() => appointment.AppointmentDate)" />
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label>Status</label>
+                <InputSelect @bind-Value="appointment.Status" class="form-select">
+                    @foreach (var status in Enum.GetValues<AppointmentStatus>())
+                    {
+                        <option value="@status">@status.ToString()</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label>Reason for Visit</label>
+            <InputTextArea @bind-Value="appointment.ReasonForVisit" class="form-control" rows="3" />
+            <ValidationMessage For="@(() => appointment.ReasonForVisit)" />
+        </div>
+
+        <button type="submit" class="btn btn-success">Save Appointment</button>
+        <a href="/appointments" class="btn btn-secondary">Cancel</a>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private ClinicManagement.Shared.DTOs.AppointmentDto appointment = new();
+    private List<ClinicManagement.Shared.DTOs.DoctorDto> doctors = new();
+    private List<ClinicManagement.Shared.DTOs.PatientDto> patients = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load the dropdown data first
+        doctors = await DoctorService.GetDoctorsAsync();
+        patients = await PatientService.GetPatientsAsync();
+
+        if (Id.HasValue)
+        {
+            appointment = await AppointmentService.GetAppointmentByIdAsync(Id.Value);
+        }
+        else
+        {
+            // Default setup for a new appointment
+            appointment.AppointmentDate = DateTime.Now.AddDays(1);
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        // Basic frontend validation to ensure a dropdown item was selected
+        if (appointment.PatientId == 0 || appointment.DoctorId == 0)
+        {
+            return; // DataAnnotations usually catches this, but 0 can slip through if we aren't careful
+        }
+
+        if (Id.HasValue)
+        {
+            await AppointmentService.UpdateAppointmentAsync(Id.Value, appointment);
+        }
+        else
+        {
+            await AppointmentService.CreateAppointmentAsync(appointment);
+        }
+
+        NavigationManager.NavigateTo("/appointments");
+    }
+}
