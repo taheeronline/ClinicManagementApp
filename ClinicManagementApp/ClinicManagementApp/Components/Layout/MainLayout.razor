@@ -1,16 +1,14 @@
 ﻿@inherits LayoutComponentBase
+@using ClinicManagementApp.Client.Pages.Shared;
 
-<div style="padding: 10px; background-color: #f8f9fa; border-bottom: 1px solid #ddd; margin-bottom: 20px;">
-    <nav>
-        <a href="/" style="margin-right: 15px; text-decoration: none; font-weight: bold;">Home</a>
-        <a href="/doctors" style="text-decoration: none; font-weight: bold;">Doctors</a>
-        <a href="/patients" style="text-decoration: none; font-weight: bold; margin-left: 15px;">Patients</a>
-        <a href="/appointments" style="text-decoration: none; font-weight: bold; margin-left: 15px;">Appointments</a>
-        <a href="/patientrecords" style="text-decoration: none; font-weight: bold; margin-left: 15px;">Patient Records</a>
-        <a href="/billing" style="text-decoration: none; font-weight: bold; margin-left: 15px; color: #198754;">Billing Dashboard</a>
-    </nav>
+<div class="page">
+    <main>
+        <!-- Include our interactive WebAssembly header -->
+        <ClinicHeader />
+
+        <!-- MAIN PAGE CONTENT -->
+        <article class="content px-4 py-4 bg-light" style="min-height: calc(100vh - 3.5rem);">
+            @Body
+        </article>
+    </main>
 </div>
-
-<main style="padding: 20px;">
-    @Body
-</main>

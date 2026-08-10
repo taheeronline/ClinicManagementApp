@@ -1,0 +1,348 @@
+﻿@* ClinicManagement.Client/Pages/Dashboard.razor *@
+@page "/"
+@inject ClinicManagement.Client.Services.DoctorClientService DoctorService
+@inject ClinicManagement.Client.Services.PatientClientService PatientService
+@inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
+@inject ClinicManagement.Client.Services.BillClientService BillService
+
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<div class="container-fluid py-3">
+    <h2 class="mb-4">Clinic Control Center</h2>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- BEST PRACTICE: Key Performance Indicators (KPIs) At-a-Glance -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-calendar-event"></i> Appointments Today</h6>
+                        <h2 class="mb-0">@todaysAppointments.Count</h2> <!-- We will wire this up in Step 3 -->
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-cash-stack"></i> Pending Bills</h6>
+                        <h2 class="mb-0">@(appointmentsReadyForBilling.Count + unpaidBills.Count)</h2> <!-- We will wire this up in Step 4 -->
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-people"></i> Total Patients</h6>
+                        <h2 class="mb-0">@patients.Count</h2> <!-- We will wire this up in Step 2 -->
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-person-badge"></i> Active Doctors</h6>
+                        <h2 class="mb-0">@doctors.Count</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD GRID -->
+        <div class="row">
+
+            <!-- LEFT COLUMN (Doctors & Patients) -->
+            <div class="col-md-4">
+
+                <!-- WIDGET 1: Doctors & Speciality -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                        <strong class="mb-0">Our Doctors</strong>
+                        <a href="/doctors" class="btn btn-sm btn-outline-dark">Manage</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            @if (!doctors.Any())
+                            {
+                                <li class="list-group-item text-muted">No doctors registered.</li>
+                            }
+                            else
+                            {
+                                @foreach (var doctor in doctors)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">@doctor.FullName</div>
+                                            <small class="text-muted">@doctor.Speciality</small>
+                                        </div>
+                                        <span class="badge bg-secondary rounded-pill">@doctor.ConsultationFee.ToString("C")</span>
+                                    </li>
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- WIDGET 2: Patient Search (Placeholder for Step 2) -->
+                <!-- WIDGET 2: Patient Search & Quick Add -->
+                <div class="card shadow-sm border-info mb-4">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <strong class="mb-0">Patient Quick Search</strong>
+                        <!-- Direct link to add a new patient -->
+                        <a href="/patients/edit" class="btn btn-sm btn-light text-info fw-bold">+ Add New</a>
+                    </div>
+                    <div class="card-body">
+                        <!-- Search Bar -->
+                        <input type="text" class="form-control mb-3" placeholder="Search by name or phone..."
+                               value="@searchTerm" @oninput="FilterPatients" />
+
+                        <!-- Scrollable List -->
+                        <div class="list-group list-group-flush" style="max-height: 250px; overflow-y: auto;">
+                            @if (!filteredPatients.Any())
+                            {
+                                <div class="text-muted text-center pt-2">No patients found.</div>
+                            }
+                            else
+                            {
+                                @foreach (var patient in filteredPatients.Take(10)) @* Limit to top 10 for dashboard performance *@
+                                {
+                                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">@patient.FullName</div>
+                                            <small class="text-muted"><i class="bi bi-telephone"></i> @patient.ContactNumber</small>
+                                        </div>
+                                        <span class="badge bg-light text-dark border">Age: @patient.Age</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        @if (filteredPatients.Count > 10)
+                        {
+                            <div class="text-center mt-3">
+                                <a href="/patients" class="text-decoration-none small text-muted">View all @filteredPatients.Count patients...</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN (Appointments & Billing) -->
+            <div class="col-md-8">
+
+                <!-- WIDGET 3: Today's Appointments (Placeholder for Step 3) -->
+                <!-- WIDGET 3: Today's Appointments -->
+                <div class="card shadow-sm mb-4 border-primary">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <strong class="mb-0"><i class="bi bi-calendar-day"></i> Today's Schedule</strong>
+                        <!-- Direct link to book a walk-in patient -->
+                        <a href="/appointments/edit" class="btn btn-sm btn-light text-primary fw-bold">+ Book Walk-in</a>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!todaysAppointments.Any())
+                        {
+                            <p class="p-4 text-center text-muted mb-0">No appointments scheduled for today.</p>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Patient</th>
+                                            <th>Doctor</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var appt in todaysAppointments)
+                                        {
+                                            <tr>
+                                                <!-- "t" formats the DateTime as a short time string (e.g. 2:30 PM) -->
+                                                <td><strong>@appt.AppointmentDate.ToString("t")</strong></td>
+                                                <td>@appt.PatientName</td>
+                                                <td>@appt.DoctorName</td>
+                                                <td>
+                                                    <span class="badge @GetStatusBadgeClass(appt.Status)">
+                                                        @appt.Status.ToString()
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+                                                    {
+                                                        // A quick-link for the doctor to start the consultation!
+                                                        <a href="/patientrecords/edit" class="btn btn-sm btn-outline-primary">Consult</a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-footer bg-white text-center">
+                        <a href="/appointments" class="text-decoration-none small">View Full Calendar</a>
+                    </div>
+                </div>
+
+                <!-- WIDGET 4: Pending Billing (Placeholder for Step 4) -->
+                <!-- WIDGET 4: Pending Billing -->
+                <div class="card shadow-sm border-success">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <strong class="mb-0"><i class="bi bi-cash-stack"></i> Billing Queue</strong>
+                        <a href="/billing" class="btn btn-sm btn-light text-success fw-bold">Full History</a>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!appointmentsReadyForBilling.Any() && !unpaidBills.Any())
+                        {
+                            <p class="p-4 text-center text-muted mb-0"><i class="bi bi-check-circle text-success fs-4 d-block mb-2"></i>All caught up! No pending bills.</p>
+                        }
+                        else
+                        {
+                            <ul class="list-group list-group-flush">
+                                <!-- Group 1: Needs Invoice Generated -->
+                                @foreach (var appt in appointmentsReadyForBilling)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center bg-light">
+                                        <div>
+                                            <div class="fw-bold text-dark">@appt.PatientName</div>
+                                            <small class="text-muted">Dr. @appt.DoctorName - Finished Consultation</small>
+                                        </div>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => GenerateBill(appt.Id)">Generate Bill</button>
+                                    </li>
+                                }
+
+                                <!-- Group 2: Needs Payment Collected -->
+                                @foreach (var bill in unpaidBills)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold text-danger">@bill.PatientName</div>
+                                            <small class="text-muted">Invoice generated • @bill.ConsultationCharge.ToString("C")</small>
+                                        </div>
+                                        <button class="btn btn-sm btn-success" @onclick="() => MarkAsPaid(bill.Id)">Collect Payment</button>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // Step 1
+    private List<ClinicManagement.Shared.DTOs.DoctorDto> doctors = new();
+
+    // Step 2
+    private List<ClinicManagement.Shared.DTOs.PatientDto> patients = new();
+    private List<ClinicManagement.Shared.DTOs.PatientDto> filteredPatients = new();
+    private string searchTerm = string.Empty;
+
+    // Step 3
+    private List<ClinicManagement.Shared.DTOs.AppointmentDto> todaysAppointments = new();
+
+    // Step 4
+    private List<ClinicManagement.Shared.DTOs.AppointmentDto> appointmentsReadyForBilling = new();
+    private List<ClinicManagement.Shared.DTOs.ConsultationBillDto> unpaidBills = new();
+
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        isLoading = true;
+        StateHasChanged(); // Force UI update to show loader if triggered manually
+
+        doctors = await DoctorService.GetDoctorsAsync();
+
+        patients = await PatientService.GetPatientsAsync();
+        FilterPatients(new ChangeEventArgs { Value = searchTerm }); // Retain search filter on reload
+
+        var allAppointments = await AppointmentService.GetAppointmentsAsync();
+        var allBills = await BillService.GetBillsAsync();
+
+        // Filter Today's Appointments
+        todaysAppointments = allAppointments
+            .Where(a => a.AppointmentDate.Date == DateTime.Today)
+            .OrderBy(a => a.AppointmentDate)
+            .ToList();
+
+        // Filter Unpaid Bills
+        unpaidBills = allBills.Where(b => !b.IsPaid).ToList();
+
+        // Filter Appointments that are "Completed" but do not have a bill generated yet
+        var billedAppointmentIds = allBills.Select(b => b.AppointmentId).ToList();
+        appointmentsReadyForBilling = allAppointments
+            .Where(a => a.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed
+                     && !billedAppointmentIds.Contains(a.Id))
+            .ToList();
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    // Step 2 Logic
+    private void FilterPatients(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredPatients = patients;
+        }
+        else
+        {
+            filteredPatients = patients
+                .Where(p => p.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            p.ContactNumber.Contains(searchTerm))
+                .ToList();
+        }
+    }
+
+    // Step 3 Logic
+    private string GetStatusBadgeClass(ClinicManagement.Shared.Enums.AppointmentStatus status) => status switch
+    {
+        ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled => "bg-primary",
+        ClinicManagement.Shared.Enums.AppointmentStatus.Completed => "bg-success",
+        ClinicManagement.Shared.Enums.AppointmentStatus.Closed => "bg-secondary",
+        ClinicManagement.Shared.Enums.AppointmentStatus.Cancelled => "bg-danger",
+        ClinicManagement.Shared.Enums.AppointmentStatus.NoShow => "bg-dark",
+        _ => "bg-light text-dark"
+    };
+
+    // Step 4 Logic - Dashboard Actions
+    private async Task GenerateBill(int appointmentId)
+    {
+        await BillService.GenerateBillAsync(appointmentId);
+        await LoadDashboardData(); // Refresh the dashboard instantly!
+    }
+
+    private async Task MarkAsPaid(int billId)
+    {
+        await BillService.MarkAsPaidAsync(billId);
+        await LoadDashboardData(); // Refresh the dashboard instantly!
+    }
+}

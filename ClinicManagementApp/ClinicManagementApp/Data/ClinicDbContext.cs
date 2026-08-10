@@ -11,6 +11,7 @@ namespace ClinicManagementApp.Data
         }
 
         // DbSets represent the actual tables in your database
+        public DbSet<Clinic> Clinics { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Patient> Patients { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
@@ -22,6 +23,17 @@ namespace ClinicManagementApp.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Automatically create the default Clinic record (Id = 1)
+            modelBuilder.Entity<Clinic>().HasData(
+                new Clinic
+                {
+                    Id = 1,
+                    Name = "SHAMS Clinic",
+                    Address = "K. Narayanapur, Bangalore - 560077",
+                    MobileNumber = "9876543210"
+                }
+            );
 
             // Prevent cascade delete from Patient to PatientRecord
             modelBuilder.Entity<PatientRecord>()
