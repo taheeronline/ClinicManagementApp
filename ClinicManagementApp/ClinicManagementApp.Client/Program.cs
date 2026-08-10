@@ -8,5 +8,6 @@ builder.Services.AddScoped<DoctorClientService>();
 builder.Services.AddScoped<PatientClientService>();
 builder.Services.AddScoped<AppointmentClientService>();
 builder.Services.AddScoped<PatientRecordClientService>();
+builder.Services.AddScoped<BillClientService>();
 
 await builder.Build().RunAsync();

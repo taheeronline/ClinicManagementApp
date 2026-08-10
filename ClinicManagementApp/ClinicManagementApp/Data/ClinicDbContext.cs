@@ -16,6 +16,7 @@ namespace ClinicManagementApp.Data
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<PatientRecord> PatientRecords { get; set; }
         public DbSet<Prescription> Prescriptions { get; set; }
+        public DbSet<ConsultationBill> ConsultationBills { get; set; }
 
         // ADD THIS METHOD:
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,6 +42,13 @@ namespace ClinicManagementApp.Data
                 .HasOne(p => p.Appointment)
                 .WithMany()
                 .HasForeignKey(p => p.AppointmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Prevent cascade delete for Bills
+            modelBuilder.Entity<ConsultationBill>()
+                .HasOne(b => b.Appointment)
+                .WithMany()
+                .HasForeignKey(b => b.AppointmentId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
