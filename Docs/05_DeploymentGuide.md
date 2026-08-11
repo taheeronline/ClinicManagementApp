@@ -6,7 +6,7 @@
 ## 1. Prerequisites
 * Windows Server with IIS (or Azure App Service).
 * SQL Server (Express, Standard, or Azure SQL).
-* .NET 8 Hosting Bundle installed on the server.
+* .NET 10 Hosting Bundle installed on the server.
 
 ## 2. Initial Setup
 1. **Database Connection:** Update the `appsettings.json` in the Server project with the production SQL Server connection string.
