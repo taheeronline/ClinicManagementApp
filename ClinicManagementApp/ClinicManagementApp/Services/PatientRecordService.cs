@@ -80,6 +80,39 @@ namespace ClinicManagementApp.Services
                .ToListAsync();
         }
 
+        public async Task<PatientRecordDetailsDto> GetRecordDetailsAsync(int id)
+        {
+            var record = await _context.PatientRecords
+                .Include(pr => pr.Patient)
+                .Include(pr => pr.Appointment).ThenInclude(a => a!.Doctor)
+                .FirstOrDefaultAsync(pr => pr.Id == id);
+
+            if (record == null) throw new Exception("Record not found.");
+
+            // Fetch the attached prescriptions based on the AppointmentId
+            var prescriptions = await _context.Prescriptions
+                .Where(p => p.AppointmentId == record.AppointmentId)
+                .Select(p => new PrescriptionItemDto
+                {
+                    MedicineName = p.MedicineName,
+                    Dosage = p.Dosage,
+                    Duration = p.Duration,
+                    Instructions = p.Instructions
+                }).ToListAsync();
+
+            return new PatientRecordDetailsDto
+            {
+                Id = record.Id,
+                DateAdded = record.DateAdded,
+                PatientName = $"{record.Patient!.FirstName} {record.Patient.LastName}",
+                DoctorName = $"{record.Appointment!.Doctor!.FirstName} {record.Appointment.Doctor.LastName}",
+                Symptoms = record.Symptoms,
+                Diagnosis = record.Diagnosis,
+                AdditionalNotes = record.AdditionalNotes,
+                Prescriptions = prescriptions
+            };
+        }
+
         public async Task<PatientRecordDto> CreateRecordAsync(PatientRecordDto recordDto)
         {
             var record = new PatientRecord
@@ -99,28 +132,28 @@ namespace ClinicManagementApp.Services
             return recordDto;
         }
 
-        public async Task UpdateRecordAsync(int id, PatientRecordDto recordDto)
-        {
-            var record = await _context.PatientRecords.FindAsync(id);
-            if (record == null) throw new PatientRecordNotFoundException(id);
+        //public async Task UpdateRecordAsync(int id, PatientRecordDto recordDto)
+        //{
+        //    var record = await _context.PatientRecords.FindAsync(id);
+        //    if (record == null) throw new PatientRecordNotFoundException(id);
 
-            record.PatientId = recordDto.PatientId;
-            record.AppointmentId = recordDto.AppointmentId;
-            record.Symptoms = recordDto.Symptoms;
-            record.Diagnosis = recordDto.Diagnosis;
-            record.AdditionalNotes = recordDto.AdditionalNotes;
+        //    record.PatientId = recordDto.PatientId;
+        //    record.AppointmentId = recordDto.AppointmentId;
+        //    record.Symptoms = recordDto.Symptoms;
+        //    record.Diagnosis = recordDto.Diagnosis;
+        //    record.AdditionalNotes = recordDto.AdditionalNotes;
 
-            await _context.SaveChangesAsync();
-        }
+        //    await _context.SaveChangesAsync();
+        //}
 
-        public async Task DeleteRecordAsync(int id)
-        {
-            var record = await _context.PatientRecords.FindAsync(id);
-            if (record == null) throw new PatientRecordNotFoundException(id);
+        //public async Task DeleteRecordAsync(int id)
+        //{
+        //    var record = await _context.PatientRecords.FindAsync(id);
+        //    if (record == null) throw new PatientRecordNotFoundException(id);
 
-            _context.PatientRecords.Remove(record);
-            await _context.SaveChangesAsync();
-        }
+        //    _context.PatientRecords.Remove(record);
+        //    await _context.SaveChangesAsync();
+        //}
 
         public async Task CompleteConsultationAsync(ConsultationSaveDto dto)
         {

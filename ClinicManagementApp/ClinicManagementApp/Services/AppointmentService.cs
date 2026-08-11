@@ -60,19 +60,24 @@ namespace ClinicManagementApp.Services
 
         public async Task<AppointmentDto> CreateAppointmentAsync(AppointmentDto appointmentDto)
         {
+            await ValidateDoubleBookingAsync(appointmentDto.DoctorId, appointmentDto.AppointmentDate, 0); // 0 means new appointment
+
             var appointment = new Appointment
             {
                 PatientId = appointmentDto.PatientId,
                 DoctorId = appointmentDto.DoctorId,
                 AppointmentDate = appointmentDto.AppointmentDate,
-                Status = appointmentDto.Status,
+                Status = ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled,
                 ReasonForVisit = appointmentDto.ReasonForVisit
             };
 
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
 
+            // Populate the generated ID and Status back into the DTO to return it
             appointmentDto.Id = appointment.Id;
+            appointmentDto.Status = appointment.Status;
+
             return appointmentDto;
         }
 
@@ -80,6 +85,15 @@ namespace ClinicManagementApp.Services
         {
             var appointment = await _context.Appointments.FindAsync(id);
             if (appointment == null) throw new AppointmentNotFoundException(id);
+
+            if (appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed ||
+                appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Closed)
+            {
+                throw new InvalidOperationException("Cannot modify an appointment that has already been completed or closed.");
+            }
+
+            // Pass the 'id' so we don't compare the appointment against itself when updating!
+            await ValidateDoubleBookingAsync(appointmentDto.DoctorId, appointmentDto.AppointmentDate, id);
 
             appointment.PatientId = appointmentDto.PatientId;
             appointment.DoctorId = appointmentDto.DoctorId;
@@ -90,13 +104,64 @@ namespace ClinicManagementApp.Services
             await _context.SaveChangesAsync();
         }
 
+        // --- ADD THIS HELPER METHOD TO THE CLASS ---
+        private async Task ValidateDoubleBookingAsync(int doctorId, DateTime requestedTime, int currentAppointmentId)
+        {
+            // Define the blocked 30-minute window
+            var bufferStart = requestedTime.AddMinutes(-30);
+            var bufferEnd = requestedTime.AddMinutes(30);
+
+            bool isDoubleBooked = await _context.Appointments
+                .Where(a => a.DoctorId == doctorId
+                         && a.Id != currentAppointmentId // Ignore itself during an update
+                         && a.Status != ClinicManagement.Shared.Enums.AppointmentStatus.Cancelled
+                         && a.Status != ClinicManagement.Shared.Enums.AppointmentStatus.NoShow)
+                .AnyAsync(a => a.AppointmentDate > bufferStart && a.AppointmentDate < bufferEnd);
+
+            if (isDoubleBooked)
+            {
+                throw new InvalidOperationException("This doctor is already booked during that time slot. Please select a time at least 30 minutes before or after.");
+            }
+        }
+
         public async Task DeleteAppointmentAsync(int id)
         {
             var appointment = await _context.Appointments.FindAsync(id);
             if (appointment == null) throw new AppointmentNotFoundException(id);
 
+            // --- BUSINESS RULE #1: IMMUTABILITY CHECK ---
+            if (appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed ||
+                appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Closed)
+            {
+                throw new InvalidOperationException("Cannot delete an appointment that has already been completed or closed.");
+            }
+            // --------------------------------------------
+
             _context.Appointments.Remove(appointment);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> MarkOverdueAsNoShowAsync()
+        {
+            // Define the threshold (e.g., 2 hours in the past)
+            var overdueTime = DateTime.Now.AddHours(-2);
+
+            var overdueAppointments = await _context.Appointments
+                .Where(a => a.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled
+                         && a.AppointmentDate < overdueTime)
+                .ToListAsync();
+
+            if (!overdueAppointments.Any()) return 0;
+
+            foreach (var appt in overdueAppointments)
+            {
+                appt.Status = ClinicManagement.Shared.Enums.AppointmentStatus.NoShow;
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Return the number of appointments that were updated
+            return overdueAppointments.Count;
         }
     }
 }

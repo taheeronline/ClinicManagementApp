@@ -74,15 +74,36 @@ namespace ClinicManagementApp.Services
 
             if (bill == null) throw new BillNotFoundException(billId);
 
-            // 1. Mark bill as paid
+            // --- BUSINESS RULE #6: IMMUTABILITY ---
+            if (bill.IsPaid)
+            {
+                throw new InvalidOperationException("This invoice has already been paid and closed.");
+            }
+            // --------------------------------------
+
             bill.IsPaid = true;
 
-            // 2. Close the appointment! 
             if (bill.Appointment != null)
             {
                 bill.Appointment.Status = ClinicManagement.Shared.Enums.AppointmentStatus.Closed;
             }
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteBillAsync(int id)
+        {
+            var bill = await _context.ConsultationBills.FindAsync(id);
+            if (bill == null) throw new BillNotFoundException(id);
+
+            // --- BUSINESS RULE #6: IMMUTABILITY ---
+            if (bill.IsPaid)
+            {
+                throw new InvalidOperationException("A paid invoice cannot be deleted. For accounting purposes, process a refund instead.");
+            }
+            // --------------------------------------
+
+            _context.ConsultationBills.Remove(bill);
             await _context.SaveChangesAsync();
         }
 

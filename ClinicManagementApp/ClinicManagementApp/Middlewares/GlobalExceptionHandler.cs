@@ -27,6 +27,9 @@ namespace ClinicManagementApp.Middlewares
                 AppointmentNotFoundException => StatusCodes.Status404NotFound,
                 PatientRecordNotFoundException => StatusCodes.Status404NotFound,
                 BillNotFoundException => StatusCodes.Status404NotFound,
+
+                InvalidOperationException => StatusCodes.Status400BadRequest,
+
                 _ => StatusCodes.Status500InternalServerError
             };
 
@@ -36,8 +39,8 @@ namespace ClinicManagementApp.Middlewares
             var problemDetails = new ProblemDetails
             {
                 Status = statusCode,
-                Title = "An error occurred while processing your request.",
-                Detail = exception.Message
+                Title = "An error occurred",
+                Detail = exception.Message // This will pass our custom rule messages to the UI!
             };
 
             await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);

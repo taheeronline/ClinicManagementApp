@@ -26,6 +26,12 @@ namespace ClinicManagementApp.Controllers
         public async Task<ActionResult<List<PatientRecordDto>>> GetRecordsByPatient(int patientId) =>
             Ok(await _recordService.GetRecordsByPatientIdAsync(patientId));
 
+        [HttpGet("{id}/details")]
+        public async Task<ActionResult<PatientRecordDetailsDto>> GetRecordDetails(int id)
+        {
+            return Ok(await _recordService.GetRecordDetailsAsync(id));
+        }
+        
         [HttpPost]
         public async Task<ActionResult<PatientRecordDto>> CreateRecord(PatientRecordDto recordDto)
         {
@@ -34,18 +40,18 @@ namespace ClinicManagementApp.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRecord(int id, PatientRecordDto recordDto)
-        {
-            await _recordService.UpdateRecordAsync(id, recordDto);
-            return NoContent();
-        }
+        //public async Task<IActionResult> UpdateRecord(int id, PatientRecordDto recordDto)
+        //{
+        //    await _recordService.UpdateRecordAsync(id, recordDto);
+        //    return NoContent();
+        //}
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRecord(int id)
-        {
-            await _recordService.DeleteRecordAsync(id);
-            return NoContent();
-        }
+        //[HttpDelete("{id}")]
+        //public async Task<IActionResult> DeleteRecord(int id)
+        //{
+        //    await _recordService.DeleteRecordAsync(id);
+        //    return NoContent();
+        //}
 
         [HttpPost("complete-consultation")]
         public async Task<IActionResult> CompleteConsultation(ConsultationSaveDto dto)

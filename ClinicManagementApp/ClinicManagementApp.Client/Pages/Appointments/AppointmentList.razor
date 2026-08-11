@@ -4,6 +4,14 @@
 
 <h3>Appointments</h3>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
 <a href="/appointments/edit" class="btn btn-primary mb-3">Book New Appointment</a>
 
 @if (appointments == null)
@@ -39,8 +47,19 @@ else
                         </span>
                     </td>
                     <td>
-                        <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <button @onclick="() => DeleteAppointment(appt.Id)" class="btn btn-sm btn-danger">Delete</button>
+                        @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled ||
+                             appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Cancelled ||
+                             appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.NoShow)
+                        {
+                            <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-warning">Edit</a>
+                            <button @onclick="() => DeleteAppointment(appt.Id)" class="btn btn-sm btn-danger">Delete</button>
+                        }
+                        else
+                        {
+                            <span class="text-muted" title="Completed/Closed appointments cannot be modified">
+                                <i class="bi bi-lock-fill text-secondary"></i> Locked
+                            </span>
+                        }
                     </td>
                 </tr>
             }
@@ -50,6 +69,7 @@ else
 
 @code {
     private List<ClinicManagement.Shared.DTOs.AppointmentDto>? appointments;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,8 +83,16 @@ else
 
     private async Task DeleteAppointment(int id)
     {
-        await AppointmentService.DeleteAppointmentAsync(id);
-        await LoadAppointments();
+        try
+        {
+            errorMessage = string.Empty;
+            await AppointmentService.DeleteAppointmentAsync(id);
+            appointments = await AppointmentService.GetAppointmentsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 
     // Helper method to color-code the status badges

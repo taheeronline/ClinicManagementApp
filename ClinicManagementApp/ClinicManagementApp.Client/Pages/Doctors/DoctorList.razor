@@ -5,6 +5,14 @@
 
 <h3>Doctors Directory</h3>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
 <a href="/doctors/edit" class="btn btn-primary mb-3">Add New Doctor</a>
 
 @if (doctors == null)
@@ -45,6 +53,7 @@ else
 
 @code {
     private List<ClinicManagement.Shared.DTOs.DoctorDto>? doctors;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -58,8 +67,15 @@ else
 
     private async Task DeleteDoctor(int id)
     {
-        // In a real app, you might want to add a JS confirm dialog here
-        await DoctorService.DeleteDoctorAsync(id);
-        await LoadDoctors(); // Refresh the list
+        try
+        {
+            errorMessage = string.Empty;
+            await DoctorService.DeleteDoctorAsync(id);
+            doctors = await DoctorService.GetDoctorsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 }

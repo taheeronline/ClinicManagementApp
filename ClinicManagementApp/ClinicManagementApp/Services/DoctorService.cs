@@ -90,14 +90,17 @@ namespace ClinicManagementApp.Services
 
         public async Task DeleteDoctorAsync(int id)
         {
-            var doctor = await _context.Doctors.FindAsync(id);
-
-            if (doctor == null)
+            // --- BUSINESS RULE #3: REFERENTIAL INTEGRITY ---
+            bool hasAppointments = await _context.Appointments.AnyAsync(a => a.DoctorId == id);
+            if (hasAppointments)
             {
-                throw new DoctorNotFoundException(id);
+                throw new InvalidOperationException("Cannot delete this doctor because they have appointment history attached to them.");
             }
+            // -----------------------------------------------
 
-            // Soft delete is usually better for clinics to keep history, but we'll do a hard delete for this CRUD setup
+            var doctor = await _context.Doctors.FindAsync(id);
+            if (doctor == null) throw new DoctorNotFoundException(id);
+
             _context.Doctors.Remove(doctor);
             await _context.SaveChangesAsync();
         }

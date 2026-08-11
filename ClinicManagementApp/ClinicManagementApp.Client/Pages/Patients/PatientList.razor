@@ -5,6 +5,14 @@
 
 <h3>Patients Directory</h3>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
 <a href="/patients/edit" class="btn btn-primary mb-3">Register New Patient</a>
 
 @if (patients == null)
@@ -47,6 +55,7 @@ else
 
 @code {
     private List<ClinicManagement.Shared.DTOs.PatientDto>? patients;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -60,7 +69,15 @@ else
 
     private async Task DeletePatient(int id)
     {
-        await PatientService.DeletePatientAsync(id);
-        await LoadPatients();
+        try
+        {
+            errorMessage = string.Empty; // Clear previous errors
+            await PatientService.DeletePatientAsync(id);
+            patients = await PatientService.GetPatientsAsync(); // Refresh list on success
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message; // Show the specific business rule error!
+        }
     }
 }

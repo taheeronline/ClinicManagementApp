@@ -15,6 +15,12 @@
 }
 else
 {
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mb-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        </div>
+    }
     <EditForm Model="appointment" OnValidSubmit="HandleSubmit">
         <DataAnnotationsValidator />
         <ValidationSummary />
@@ -83,20 +89,30 @@ else
     private List<ClinicManagement.Shared.DTOs.DoctorDto> doctors = new();
     private List<ClinicManagement.Shared.DTOs.PatientDto> patients = new();
     private bool isLoading = true;
+    private string errorMessage = string.Empty;
 
+    // Inside the @code block of AppointmentEdit.razor
     protected override async Task OnInitializedAsync()
     {
-        // Load the dropdown data first
         doctors = await DoctorService.GetDoctorsAsync();
         patients = await PatientService.GetPatientsAsync();
 
         if (Id.HasValue)
         {
             appointment = await AppointmentService.GetAppointmentByIdAsync(Id.Value);
+
+            // --- BUSINESS RULE #1: PREVENT DIRECT URL ACCESS ---
+            if (appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed ||
+                appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Closed)
+            {
+                // If they try to edit a locked appointment, kick them back to the list
+                NavigationManager.NavigateTo("/appointments");
+                return;
+            }
+            // ---------------------------------------------------
         }
         else
         {
-            // Default setup for a new appointment
             appointment.AppointmentDate = DateTime.Now.AddDays(1);
         }
 
@@ -105,21 +121,24 @@ else
 
     private async Task HandleSubmit()
     {
-        // Basic frontend validation to ensure a dropdown item was selected
-        if (appointment.PatientId == 0 || appointment.DoctorId == 0)
-        {
-            return; // DataAnnotations usually catches this, but 0 can slip through if we aren't careful
-        }
+        errorMessage = string.Empty; // Clear any previous errors
 
-        if (Id.HasValue)
+        try
         {
-            await AppointmentService.UpdateAppointmentAsync(Id.Value, appointment);
-        }
-        else
-        {
-            await AppointmentService.CreateAppointmentAsync(appointment);
-        }
+            if (Id.HasValue)
+            {
+                await AppointmentService.UpdateAppointmentAsync(Id.Value, appointment);
+            }
+            else
+            {
+                await AppointmentService.CreateAppointmentAsync(appointment);
+            }
 
-        NavigationManager.NavigateTo("/appointments");
+            NavigationManager.NavigateTo("/appointments"); // Only navigate if successful!
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message; // Display the double-booking error on the screen
+        }
     }
 }

@@ -35,9 +35,12 @@ else
                     <td>@record.PatientName</td>
                     <td>@record.AppointmentDate.ToString("g")</td>
                     <td>@record.Diagnosis</td>
+                    <!-- Inside the tbody loop in PatientRecordList.razor -->
                     <td>
-                        <a href="/patientrecords/edit/@record.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <button @onclick="() => DeleteRecord(record.Id)" class="btn btn-sm btn-danger">Delete</button>
+                        <a href="/patientrecords/view/@record.Id" class="btn btn-sm btn-info text-white">
+                            <i class="bi bi-file-medical"></i> View Details
+                        </a>
+                        <span class="ms-2 text-muted small"><i class="bi bi-lock-fill"></i> Locked</span>
                     </td>
                 </tr>
             }

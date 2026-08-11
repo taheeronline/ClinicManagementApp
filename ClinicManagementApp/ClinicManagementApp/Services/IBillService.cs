@@ -8,5 +8,7 @@ namespace ClinicManagementApp.Services
         Task<List<ConsultationBillDto>> GetAllBillsAsync();
         Task<ConsultationBillDto> GenerateBillAsync(int appointmentId);
         Task MarkAsPaidAsync(int billId);
+
+        Task DeleteBillAsync(int id);
     }
 }

@@ -90,6 +90,17 @@ namespace ClinicManagementApp.Services
 
         public async Task DeletePatientAsync(int id)
         {
+            // --- BUSINESS RULE #3: REFERENTIAL INTEGRITY ---
+            // Check if they have appointments OR medical records
+            bool hasAppointments = await _context.Appointments.AnyAsync(a => a.PatientId == id);
+            bool hasRecords = await _context.PatientRecords.AnyAsync(pr => pr.PatientId == id);
+
+            if (hasAppointments || hasRecords)
+            {
+                throw new InvalidOperationException("Cannot delete this patient. Data retention laws require keeping their medical history.");
+            }
+            // -----------------------------------------------
+
             var patient = await _context.Patients.FindAsync(id);
             if (patient == null) throw new PatientNotFoundException(id);
 

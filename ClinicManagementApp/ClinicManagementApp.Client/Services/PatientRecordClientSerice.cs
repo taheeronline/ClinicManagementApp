@@ -22,6 +22,9 @@ namespace ClinicManagement.Client.Services
         public async Task<List<PatientRecordDto>> GetRecordsByPatientIdAsync(int patientId) =>
             await _httpClient.GetFromJsonAsync<List<PatientRecordDto>>($"api/patientrecords/patient/{patientId}") ?? new List<PatientRecordDto>();
 
+        public async Task<PatientRecordDetailsDto> GetRecordDetailsAsync(int id) =>
+    await _httpClient.GetFromJsonAsync<PatientRecordDetailsDto>($"api/patientrecords/{id}/details") ?? new PatientRecordDetailsDto();
+
         public async Task CreateRecordAsync(PatientRecordDto recordDto) =>
             await _httpClient.PostAsJsonAsync("api/patientrecords", recordDto);
 

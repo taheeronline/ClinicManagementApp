@@ -39,5 +39,12 @@ namespace ClinicManagementApp.Controllers
             await _billService.MarkAsPaidAsync(id);
             return NoContent();
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBill(int id)
+        {
+            await _billService.DeleteBillAsync(id);
+            return NoContent();
+        }
     }
 }
