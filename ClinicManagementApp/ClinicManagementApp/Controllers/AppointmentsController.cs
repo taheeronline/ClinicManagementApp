@@ -49,5 +49,12 @@ namespace ClinicManagementApp.Controllers
             var count = await _appointmentService.MarkOverdueAsNoShowAsync();
             return Ok(count);
         }
+
+        [HttpPut("{id}/cancel")]
+        public async Task<IActionResult> CancelAppointment(int id)
+        {
+            await _appointmentService.CancelAppointmentAsync(id);
+            return NoContent();
+        }
     }
 }

@@ -10,5 +10,6 @@ namespace ClinicManagementApp.Services
         Task UpdateAppointmentAsync(int id, AppointmentDto appointmentDto);
         Task DeleteAppointmentAsync(int id);
         Task<int> MarkOverdueAsNoShowAsync();
+        Task CancelAppointmentAsync(int id);
     }
 }

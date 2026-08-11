@@ -58,16 +58,6 @@ else
                 <InputDate Type="InputDateType.DateTimeLocal" @bind-Value="appointment.AppointmentDate" class="form-control" />
                 <ValidationMessage For="@(() => appointment.AppointmentDate)" />
             </div>
-
-            <div class="col-md-6 mb-3">
-                <label>Status</label>
-                <InputSelect @bind-Value="appointment.Status" class="form-select">
-                    @foreach (var status in Enum.GetValues<AppointmentStatus>())
-                    {
-                        <option value="@status">@status.ToString()</option>
-                    }
-                </InputSelect>
-            </div>
         </div>
 
         <div class="mb-3">
@@ -91,7 +81,6 @@ else
     private bool isLoading = true;
     private string errorMessage = string.Empty;
 
-    // Inside the @code block of AppointmentEdit.razor
     protected override async Task OnInitializedAsync()
     {
         doctors = await DoctorService.GetDoctorsAsync();
@@ -101,18 +90,19 @@ else
         {
             appointment = await AppointmentService.GetAppointmentByIdAsync(Id.Value);
 
-            // --- BUSINESS RULE #1: PREVENT DIRECT URL ACCESS ---
-            if (appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed ||
-                appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Closed)
+            // --- UPDATED BUSINESS RULE #1: PREVENT DIRECT URL ACCESS ---
+            // If the appointment is NOT Scheduled (i.e. Cancelled, NoShow, Completed, Closed)
+            if (appointment.Status != ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
             {
-                // If they try to edit a locked appointment, kick them back to the list
+                // Kick them back to the appointments list
                 NavigationManager.NavigateTo("/appointments");
                 return;
             }
-            // ---------------------------------------------------
+            // -----------------------------------------------------------
         }
         else
         {
+            // Default new appointments to tomorrow
             appointment.AppointmentDate = DateTime.Now.AddDays(1);
         }
 

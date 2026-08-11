@@ -47,12 +47,10 @@ else
                         </span>
                     </td>
                     <td>
-                        @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled ||
-                             appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Cancelled ||
-                             appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.NoShow)
+                        @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
                         {
                             <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-warning">Edit</a>
-                            <button @onclick="() => DeleteAppointment(appt.Id)" class="btn btn-sm btn-danger">Delete</button>
+                            <button @onclick="() => CancelAppointment(appt.Id)" class="btn btn-sm btn-secondary">Cancel</button>
                         }
                         else
                         {
@@ -104,4 +102,19 @@ else
         ClinicManagement.Shared.Enums.AppointmentStatus.NoShow => "bg-secondary",
         _ => "bg-dark"
     };
+
+    // Inside the @code block in AppointmentList.razor
+    private async Task CancelAppointment(int id)
+    {
+        try
+        {
+            errorMessage = string.Empty;
+            await AppointmentService.CancelAppointmentAsync(id);
+            appointments = await AppointmentService.GetAppointmentsAsync(); // Refresh list
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
 }

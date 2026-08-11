@@ -79,5 +79,12 @@ namespace ClinicManagement.Client.Services
                 throw new Exception(finalErrorMessage);
             }
         }
+
+        // Add this to AppointmentClientService.cs
+        public async Task CancelAppointmentAsync(int id)
+        {
+            var response = await _httpClient.PutAsync($"api/appointments/{id}/cancel", null);
+            await HandleErrorsAsync(response);
+        }
     }
 }

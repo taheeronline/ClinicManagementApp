@@ -207,10 +207,17 @@
                                                 <td>
                                                     @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
                                                     {
-                                                        <a href="/patientrecords/edit" class="btn btn-sm btn-outline-primary">Consult</a>
+                                                        <!-- Pass the ID for the Consult flow -->
+                                                        <a href="/patientrecords/edit/@appt.Id" class="btn btn-sm btn-outline-primary" title="Start Consultation">Consult</a>
+
+                                                        <!-- NEW: Quick Cancel Button -->
+                                                        <button @onclick="() => CancelAppointment(appt.Id)" class="btn btn-sm btn-outline-danger ms-1" title="Cancel Appointment">
+                                                            <i class="bi bi-x-circle"></i>
+                                                        </button>
                                                     }
                                                     else
                                                     {
+                                                        <!-- View button for locked appointments -->
                                                         <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-outline-secondary">View</a>
                                                     }
                                                 </td>
@@ -527,6 +534,28 @@
         catch (Exception ex)
         {
             errorMessage = $"Cannot process payment: {ex.Message}";
+        }
+    }
+
+    private async Task CancelAppointment(int appointmentId)
+    {
+        try
+        {
+            errorMessage = string.Empty;
+            isLoading = true;
+            StateHasChanged();
+
+            // Call the API to cancel it
+            await AppointmentService.CancelAppointmentAsync(appointmentId);
+
+            // Reload the dashboard data so the appointment instantly updates to "Cancelled"
+            await LoadDashboardData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to cancel appointment: {ex.Message}";
+            isLoading = false;
+            StateHasChanged();
         }
     }
 }

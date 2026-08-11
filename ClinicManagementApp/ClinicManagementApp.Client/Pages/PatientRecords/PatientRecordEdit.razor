@@ -1,123 +1,159 @@
-﻿@page "/patientrecords/edit"
+﻿@* ClinicManagement.Client/Pages/PatientRecords/PatientRecordEdit.razor *@
+@page "/patientrecords/edit"
+@page "/patientrecords/edit/{AppointmentId:int}"
 @inject ClinicManagement.Client.Services.PatientRecordClientService RecordService
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @inject NavigationManager NavigationManager
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<h3>Doctor's Consultation Dashboard</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-file-medical text-primary"></i> Doctor's Consultation Dashboard</h3>
+    <a href="/" class="btn btn-outline-secondary">Cancel & Go Back</a>
+</div>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
 
 @if (isLoading)
 {
-    <p><em>Loading data...</em></p>
+    <p><em>Loading consultation details...</em></p>
 }
 else
 {
+    <!-- Locked Context Info (Replaces the Dropdown) -->
+    <div class="card shadow-sm mb-4 border-primary">
+        <div class="card-body bg-light">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Patient Name</small>
+                    <span class="fs-5 fw-bold text-dark">@appointmentDetails?.PatientName</span>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Doctor</small>
+                    <span class="fs-5 fw-bold text-dark">Dr. @appointmentDetails?.DoctorName</span>
+                </div>
+                <div class="col-md-4">
+                    <small class="text-muted d-block">Appointment Time</small>
+                    <span class="fs-5 fw-bold text-dark">@appointmentDetails?.AppointmentDate.ToString("f")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <EditForm Model="consultation" OnValidSubmit="HandleSubmit">
         <DataAnnotationsValidator />
 
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">1. Select Scheduled Appointment</div>
-            <div class="card-body">
-                <InputSelect @bind-Value="consultation.AppointmentId" class="form-select" @oninput="OnAppointmentSelected">
-                    <option value="0">-- Select a Scheduled Appointment --</option>
-                    @foreach (var a in scheduledAppointments)
-                    {
-                        <option value="@a.Id">@a.AppointmentDate.ToString("g") - Patient: @a.PatientName</option>
-                    }
-                </InputSelect>
-                <ValidationMessage For="@(() => consultation.AppointmentId)" />
-            </div>
-        </div>
-
-        <div class="card mb-4">
-            <div class="card-header bg-info text-white">2. Clinical Notes</div>
+        <div class="card mb-4 shadow-sm border-info">
+            <div class="card-header bg-info text-white fw-bold">1. Clinical Notes</div>
             <div class="card-body">
                 <div class="mb-3">
-                    <label>Symptoms</label>
-                    <InputTextArea @bind-Value="consultation.Symptoms" class="form-control" rows="2" />
+                    <label class="form-label fw-bold">Symptoms</label>
+                    <InputTextArea @bind-Value="consultation.Symptoms" class="form-control" rows="2" placeholder="Describe patient symptoms..." />
                     <ValidationMessage For="@(() => consultation.Symptoms)" />
                 </div>
                 <div class="mb-3">
-                    <label>Diagnosis</label>
-                    <InputText @bind-Value="consultation.Diagnosis" class="form-control" />
+                    <label class="form-label fw-bold text-primary">Diagnosis</label>
+                    <InputText @bind-Value="consultation.Diagnosis" class="form-control border-primary form-control-lg" placeholder="Final diagnosis..." />
                     <ValidationMessage For="@(() => consultation.Diagnosis)" />
                 </div>
                 <div class="mb-3">
-                    <label>Additional Notes</label>
+                    <label class="form-label fw-bold">Additional Notes (Optional)</label>
                     <InputTextArea @bind-Value="consultation.AdditionalNotes" class="form-control" rows="2" />
                 </div>
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                <span>3. Prescriptions</span>
+        <div class="card mb-4 shadow-sm border-warning">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center fw-bold">
+                <span>2. Prescriptions</span>
                 <button type="button" class="btn btn-sm btn-dark" @onclick="AddMedicineRow">+ Add Medicine</button>
             </div>
             <div class="card-body">
                 @if (consultation.Prescriptions.Count == 0)
                 {
-                    <p class="text-muted">No medicines added yet.</p>
+                    <p class="text-muted mb-0">No medicines added yet. Click "+ Add Medicine" to prescribe.</p>
                 }
                 else
                 {
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Medicine</th>
-                                <th>Dosage</th>
-                                <th>Duration</th>
-                                <th>Instructions</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var med in consultation.Prescriptions)
-                            {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light">
                                 <tr>
-                                    <td><InputText @bind-Value="med.MedicineName" class="form-control form-control-sm" placeholder="Name" /></td>
-                                    <td><InputText @bind-Value="med.Dosage" class="form-control form-control-sm" placeholder="e.g. 500mg" /></td>
-                                    <td><InputText @bind-Value="med.Duration" class="form-control form-control-sm" placeholder="e.g. 5 Days" /></td>
-                                    <td><InputText @bind-Value="med.Instructions" class="form-control form-control-sm" placeholder="e.g. After food" /></td>
-                                    <td><button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveMedicineRow(med)">X</button></td>
+                                    <th>Medicine</th>
+                                    <th>Dosage</th>
+                                    <th>Duration</th>
+                                    <th>Instructions</th>
+                                    <th></th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach (var med in consultation.Prescriptions)
+                                {
+                                    <tr>
+                                        <td><InputText @bind-Value="med.MedicineName" class="form-control form-control-sm" placeholder="Name" /></td>
+                                        <td><InputText @bind-Value="med.Dosage" class="form-control form-control-sm" placeholder="e.g. 500mg" /></td>
+                                        <td><InputText @bind-Value="med.Duration" class="form-control form-control-sm" placeholder="e.g. 5 Days" /></td>
+                                        <td><InputText @bind-Value="med.Instructions" class="form-control form-control-sm" placeholder="e.g. After food" /></td>
+                                        <td class="text-end"><button type="button" class="btn btn-sm btn-danger" @onclick="() => RemoveMedicineRow(med)"><i class="bi bi-trash"></i></button></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 }
             </div>
         </div>
 
-        <button type="submit" class="btn btn-success btn-lg w-100">Complete Consultation & Ready for Billing</button>
+        <button type="submit" class="btn btn-success btn-lg w-100 shadow-sm"><i class="bi bi-check-circle me-2"></i>Complete Consultation & Send to Billing</button>
     </EditForm>
 }
 
 @code {
+    [Parameter]
+    public int? AppointmentId { get; set; } // Passed from the Dashboard URL
+
     private ClinicManagement.Shared.DTOs.ConsultationSaveDto consultation = new();
-    private List<ClinicManagement.Shared.DTOs.AppointmentDto> scheduledAppointments = new();
+    private ClinicManagement.Shared.DTOs.AppointmentDto? appointmentDetails;
+
     private bool isLoading = true;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        // Only load appointments that are currently "Scheduled" (not yet completed/closed)
-        var allAppointments = await AppointmentService.GetAppointmentsAsync();
-        scheduledAppointments = allAppointments
-            .Where(a => a.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
-            .ToList();
+        if (!AppointmentId.HasValue)
+        {
+            // If they navigate here without clicking a specific appointment, kick them back
+            NavigationManager.NavigateTo("/");
+            return;
+        }
+
+        try
+        {
+            // Fetch appointment details to display in the read-only header
+            appointmentDetails = await AppointmentService.GetAppointmentByIdAsync(AppointmentId.Value);
+
+            // SECURITY: Ensure they are not trying to consult on an already finished/cancelled appointment
+            if (appointmentDetails.Status != ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+
+            // Auto-bind the hidden IDs for the submission DTO
+            consultation.AppointmentId = appointmentDetails.Id;
+            consultation.PatientId = appointmentDetails.PatientId;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to load appointment details. It may have been deleted.";
+        }
 
         isLoading = false;
-    }
-
-    private void OnAppointmentSelected(ChangeEventArgs e)
-    {
-        if (int.TryParse(e.Value?.ToString(), out int appointmentId) && appointmentId > 0)
-        {
-            var appt = scheduledAppointments.FirstOrDefault(a => a.Id == appointmentId);
-            if (appt != null)
-            {
-                consultation.PatientId = appt.PatientId; // Auto-set the patient ID based on the appointment
-            }
-        }
     }
 
     private void AddMedicineRow()
@@ -132,9 +168,19 @@ else
 
     private async Task HandleSubmit()
     {
-        if (consultation.AppointmentId == 0) return;
+        try
+        {
+            errorMessage = string.Empty;
 
-        await RecordService.CompleteConsultationAsync(consultation);
-        NavigationManager.NavigateTo("/patientrecords");
+            // Note: Make sure CompleteConsultationAsync uses the HandleErrorsAsync pattern in the Client Service!
+            await RecordService.CompleteConsultationAsync(consultation);
+
+            // Route back to Dashboard so the receptionist/doctor sees it hit the Billing Queue instantly
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
     }
 }

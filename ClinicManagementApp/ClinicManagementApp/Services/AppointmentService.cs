@@ -81,26 +81,59 @@ namespace ClinicManagementApp.Services
             return appointmentDto;
         }
 
+        // Inside AppointmentService.cs
+
+        public async Task CancelAppointmentAsync(int id)
+        {
+            var appointment = await _context.Appointments.FindAsync(id);
+            if (appointment == null) throw new AppointmentNotFoundException(id);
+
+            if (appointment.Status != ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+            {
+                throw new InvalidOperationException("Only pending (Scheduled) appointments can be cancelled.");
+            }
+
+            appointment.Status = ClinicManagement.Shared.Enums.AppointmentStatus.Cancelled;
+            await _context.SaveChangesAsync();
+        }
+
         public async Task UpdateAppointmentAsync(int id, AppointmentDto appointmentDto)
         {
             var appointment = await _context.Appointments.FindAsync(id);
             if (appointment == null) throw new AppointmentNotFoundException(id);
 
-            if (appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed ||
-                appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Closed)
+            // --- UPDATED BUSINESS RULE #1: IMMUTABILITY ---
+            // Now it blocks anything that IS NOT Scheduled
+            if (appointment.Status != ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
             {
-                throw new InvalidOperationException("Cannot modify an appointment that has already been completed or closed.");
+                throw new InvalidOperationException("Cannot modify this appointment. Cancelled, No-Show, Completed, and Closed appointments are permanently locked.");
             }
+            // ----------------------------------------------
 
-            // Pass the 'id' so we don't compare the appointment against itself when updating!
             await ValidateDoubleBookingAsync(appointmentDto.DoctorId, appointmentDto.AppointmentDate, id);
 
             appointment.PatientId = appointmentDto.PatientId;
             appointment.DoctorId = appointmentDto.DoctorId;
             appointment.AppointmentDate = appointmentDto.AppointmentDate;
-            appointment.Status = appointmentDto.Status;
+            // Note: We don't update Status here to prevent bypassing the lifecycle. Status changes should happen via specific actions (Cancel, Complete, etc.)
             appointment.ReasonForVisit = appointmentDto.ReasonForVisit;
 
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAppointmentAsync(int id)
+        {
+            var appointment = await _context.Appointments.FindAsync(id);
+            if (appointment == null) throw new AppointmentNotFoundException(id);
+
+            // --- UPDATED BUSINESS RULE #1: IMMUTABILITY ---
+            if (appointment.Status != ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+            {
+                throw new InvalidOperationException("Cannot delete this appointment. Cancelled, No-Show, Completed, and Closed appointments are permanently locked.");
+            }
+            // ----------------------------------------------
+
+            _context.Appointments.Remove(appointment);
             await _context.SaveChangesAsync();
         }
 
@@ -122,23 +155,6 @@ namespace ClinicManagementApp.Services
             {
                 throw new InvalidOperationException("This doctor is already booked during that time slot. Please select a time at least 30 minutes before or after.");
             }
-        }
-
-        public async Task DeleteAppointmentAsync(int id)
-        {
-            var appointment = await _context.Appointments.FindAsync(id);
-            if (appointment == null) throw new AppointmentNotFoundException(id);
-
-            // --- BUSINESS RULE #1: IMMUTABILITY CHECK ---
-            if (appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed ||
-                appointment.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Closed)
-            {
-                throw new InvalidOperationException("Cannot delete an appointment that has already been completed or closed.");
-            }
-            // --------------------------------------------
-
-            _context.Appointments.Remove(appointment);
-            await _context.SaveChangesAsync();
         }
 
         public async Task<int> MarkOverdueAsNoShowAsync()
