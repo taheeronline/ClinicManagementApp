@@ -1,9 +1,10 @@
-﻿@* ClinicManagement.Client/Pages/Doctors/DoctorList.razor *@
-@page "/doctors"
+﻿@page "/doctors"
 @inject ClinicManagement.Client.Services.DoctorClientService DoctorService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<h3>Doctors Directory</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-person-badge text-warning me-2"></i> Doctors Directory</h3>
+</div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -13,46 +14,71 @@
     </div>
 }
 
-<a href="/doctors/edit" class="btn btn-primary mb-3">Add New Doctor</a>
+<!-- ACTION BAR: Button and Search side-by-side -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="/doctors/edit" class="btn btn-primary fw-bold shadow-sm">+ Add New Doctor</a>
+
+    <div class="input-group w-50 shadow-sm">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0" placeholder="Search doctors by name or speciality..."
+               value="@searchTerm" @oninput="FilterDoctors" aria-label="Search doctors" />
+    </div>
+</div>
 
 @if (doctors == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
-else if (!doctors.Any())
+else if (!filteredDoctors.Any())
 {
-    <p>No doctors found. Please add one.</p>
+    <div class="alert alert-light border text-center text-muted p-5">
+        <i class="bi bi-search fs-1 d-block mb-3"></i>
+        No doctors found matching your search.
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Speciality</th>
-                <th>Consultation Fee</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var doctor in doctors)
-            {
+    <!-- SCROLLABLE CONTAINER -->
+    <div class="table-responsive border rounded shadow-sm" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-hover table-striped mb-0 align-middle">
+            <thead class="table-dark sticky-top">
                 <tr>
-                    <td>@doctor.FullName</td>
-                    <td>@doctor.Speciality</td>
-                    <td>@doctor.ConsultationFee.ToString("C")</td>
-                    <td>
-                        <a href="/doctors/edit/@doctor.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <button @onclick="() => DeleteDoctor(doctor.Id)" class="btn btn-sm btn-danger">Delete</button>
-                    </td>
+                    <th>Name</th>
+                    <th>Speciality</th>
+                    <th>Consultation Fee</th>
+                    <th class="text-end">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var doctor in filteredDoctors)
+                {
+                    <tr>
+                        <td class="fw-bold">@doctor.FullName</td>
+                        <td><span class="badge bg-light text-dark border">@doctor.Speciality</span></td>
+                        <td>@doctor.ConsultationFee.ToString("C")</td>
+                        <td class="text-end">
+                            <a href="/doctors/edit/@doctor.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit Doctor">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button @onclick="() => DeleteDoctor(doctor.Id)" class="btn btn-sm btn-outline-danger" title="Delete Doctor">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
     private List<ClinicManagement.Shared.DTOs.DoctorDto>? doctors;
+    private List<ClinicManagement.Shared.DTOs.DoctorDto> filteredDoctors = new();
+    private string searchTerm = string.Empty;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -63,6 +89,26 @@ else
     private async Task LoadDoctors()
     {
         doctors = await DoctorService.GetDoctorsAsync();
+
+        // Apply filter immediately so it respects the search bar after a reload or delete
+        FilterDoctors(new ChangeEventArgs { Value = searchTerm });
+    }
+
+    private void FilterDoctors(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredDoctors = doctors ?? new();
+        }
+        else
+        {
+            filteredDoctors = (doctors ?? new())
+                .Where(d => d.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            d.Speciality.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
     }
 
     private async Task DeleteDoctor(int id)
@@ -71,7 +117,7 @@ else
         {
             errorMessage = string.Empty;
             await DoctorService.DeleteDoctorAsync(id);
-            doctors = await DoctorService.GetDoctorsAsync();
+            await LoadDoctors(); // Refresh list on success
         }
         catch (Exception ex)
         {

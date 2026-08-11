@@ -1,55 +1,78 @@
-﻿@* ClinicManagement.Client/Pages/PatientRecords/PatientRecordList.razor *@
-@page "/patientrecords"
+﻿@page "/patientrecords"
 @inject ClinicManagement.Client.Services.PatientRecordClientService RecordService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<h3>Patient Records</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-journal-medical text-success me-2"></i> Patient Records (EMR)</h3>
+</div>
 
-<a href="/patientrecords/edit" class="btn btn-primary mb-3">Add New Record</a>
+<!-- ACTION BAR: Info Text and Search side-by-side -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted small">
+        <i class="bi bi-info-circle-fill me-1"></i> New records can only be created by clicking <strong>Consult</strong> on the Dashboard.
+    </span>
+
+    <div class="input-group w-50 shadow-sm">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0" placeholder="Search by patient name or diagnosis..."
+               value="@searchTerm" @oninput="FilterRecords" aria-label="Search patient records" />
+    </div>
+</div>
 
 @if (records == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
-else if (!records.Any())
+else if (!filteredRecords.Any())
 {
-    <p>No patient records found.</p>
+    <div class="alert alert-light border text-center text-muted p-5">
+        <i class="bi bi-search fs-1 d-block mb-3"></i>
+        No patient records found matching your search.
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Date Added</th>
-                <th>Patient Name</th>
-                <th>Appointment Date</th>
-                <th>Diagnosis</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var record in records)
-            {
+    <!-- SCROLLABLE CONTAINER -->
+    <div class="table-responsive border rounded shadow-sm" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-hover table-striped mb-0 align-middle">
+            <thead class="table-dark sticky-top">
                 <tr>
-                    <td>@record.DateAdded.ToString("d")</td>
-                    <td>@record.PatientName</td>
-                    <td>@record.AppointmentDate.ToString("g")</td>
-                    <td>@record.Diagnosis</td>
-                    <!-- Inside the tbody loop in PatientRecordList.razor -->
-                    <td>
-                        <a href="/patientrecords/view/@record.Id" class="btn btn-sm btn-info text-white">
-                            <i class="bi bi-file-medical"></i> View Details
-                        </a>
-                        <span class="ms-2 text-muted small"><i class="bi bi-lock-fill"></i> Locked</span>
-                    </td>
+                    <th>Date Added</th>
+                    <th>Patient Name</th>
+                    <th>Appointment Date</th>
+                    <th>Diagnosis</th>
+                    <th class="text-end">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var record in filteredRecords)
+                {
+                    <tr>
+                        <td class="fw-bold">@record.DateAdded.ToString("d")</td>
+                        <td>@record.PatientName</td>
+                        <td>@record.AppointmentDate.ToString("g")</td>
+                        <td><span class="badge bg-light text-dark border">@record.Diagnosis</span></td>
+                        <td class="text-end">
+                            <a href="/patientrecords/view/@record.Id" class="btn btn-sm btn-info text-white shadow-sm">
+                                <i class="bi bi-file-medical"></i> View Details
+                            </a>
+                            <span class="ms-2 text-muted small" title="Medical records are permanently locked"><i class="bi bi-lock-fill"></i> Locked</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
     private List<ClinicManagement.Shared.DTOs.PatientRecordDto>? records;
+    private List<ClinicManagement.Shared.DTOs.PatientRecordDto> filteredRecords = new();
+    private string searchTerm = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -59,11 +82,25 @@ else
     private async Task LoadRecords()
     {
         records = await RecordService.GetRecordsAsync();
+
+        // Apply filter immediately
+        FilterRecords(new ChangeEventArgs { Value = searchTerm });
     }
 
-    private async Task DeleteRecord(int id)
+    private void FilterRecords(ChangeEventArgs e)
     {
-        await RecordService.DeleteRecordAsync(id);
-        await LoadRecords(); 
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredRecords = records ?? new();
+        }
+        else
+        {
+            filteredRecords = (records ?? new())
+                .Where(r => r.PatientName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            r.Diagnosis.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
     }
 }

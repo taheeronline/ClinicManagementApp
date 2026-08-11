@@ -2,7 +2,9 @@
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<h3>Appointments</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-calendar-check text-primary me-2"></i> All Appointments</h3>
+</div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -12,61 +14,86 @@
     </div>
 }
 
-<a href="/appointments/edit" class="btn btn-primary mb-3">Book New Appointment</a>
+<!-- ACTION BAR: Button and Search side-by-side -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="/appointments/edit" class="btn btn-primary fw-bold shadow-sm">+ Book New Appointment</a>
+
+    <div class="input-group w-50 shadow-sm">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0" placeholder="Search by patient, doctor, or status..."
+               value="@searchTerm" @oninput="FilterAppointments" aria-label="Search appointments" />
+    </div>
+</div>
 
 @if (appointments == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
-else if (!appointments.Any())
+else if (!filteredAppointments.Any())
 {
-    <p>No appointments found.</p>
+    <div class="alert alert-light border text-center text-muted p-5">
+        <i class="bi bi-search fs-1 d-block mb-3"></i>
+        No appointments found matching your search.
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Date & Time</th>
-                <th>Patient</th>
-                <th>Doctor</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var appt in appointments)
-            {
+    <!-- SCROLLABLE CONTAINER -->
+    <div class="table-responsive border rounded shadow-sm" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-hover table-striped mb-0 align-middle">
+            <thead class="table-dark sticky-top">
                 <tr>
-                    <td>@appt.AppointmentDate.ToString("g")</td>
-                    <td>@appt.PatientName</td>
-                    <td>@appt.DoctorName</td>
-                    <td>
-                        <span class="badge @GetStatusBadgeClass(appt.Status)">
-                            @appt.Status.ToString()
-                        </span>
-                    </td>
-                    <td>
-                        @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
-                        {
-                            <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-warning">Edit</a>
-                            <button @onclick="() => CancelAppointment(appt.Id)" class="btn btn-sm btn-secondary">Cancel</button>
-                        }
-                        else
-                        {
-                            <span class="text-muted" title="Completed/Closed appointments cannot be modified">
-                                <i class="bi bi-lock-fill text-secondary"></i> Locked
-                            </span>
-                        }
-                    </td>
+                    <th>Date & Time</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var appt in filteredAppointments)
+                {
+                    <tr>
+                        <td class="fw-bold">@appt.AppointmentDate.ToString("g")</td>
+                        <td>@appt.PatientName</td>
+                        <td>Dr. @appt.DoctorName</td>
+                        <td>
+                            <span class="badge @GetStatusBadgeClass(appt.Status)">
+                                @appt.Status.ToString()
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+                            {
+                                <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-outline-warning me-1" title="Edit Appointment">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button @onclick="() => CancelAppointment(appt.Id)" class="btn btn-sm btn-outline-danger" title="Cancel Appointment">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="text-muted small" title="Completed/Closed/Cancelled appointments cannot be modified">
+                                    <i class="bi bi-lock-fill text-secondary"></i> Locked
+                                </span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
     private List<ClinicManagement.Shared.DTOs.AppointmentDto>? appointments;
+    private List<ClinicManagement.Shared.DTOs.AppointmentDto> filteredAppointments = new();
+    private string searchTerm = string.Empty;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -77,15 +104,36 @@ else
     private async Task LoadAppointments()
     {
         appointments = await AppointmentService.GetAppointmentsAsync();
+
+        // Apply filter immediately so it respects the search bar after a cancel operation
+        FilterAppointments(new ChangeEventArgs { Value = searchTerm });
     }
 
-    private async Task DeleteAppointment(int id)
+    private void FilterAppointments(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredAppointments = appointments ?? new();
+        }
+        else
+        {
+            filteredAppointments = (appointments ?? new())
+                .Where(a => a.PatientName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            a.DoctorName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            a.Status.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private async Task CancelAppointment(int id)
     {
         try
         {
             errorMessage = string.Empty;
-            await AppointmentService.DeleteAppointmentAsync(id);
-            appointments = await AppointmentService.GetAppointmentsAsync();
+            await AppointmentService.CancelAppointmentAsync(id);
+            await LoadAppointments(); // Refresh list on success
         }
         catch (Exception ex)
         {
@@ -93,7 +141,6 @@ else
         }
     }
 
-    // Helper method to color-code the status badges
     private string GetStatusBadgeClass(ClinicManagement.Shared.Enums.AppointmentStatus status) => status switch
     {
         ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled => "bg-primary",
@@ -102,19 +149,4 @@ else
         ClinicManagement.Shared.Enums.AppointmentStatus.NoShow => "bg-secondary",
         _ => "bg-dark"
     };
-
-    // Inside the @code block in AppointmentList.razor
-    private async Task CancelAppointment(int id)
-    {
-        try
-        {
-            errorMessage = string.Empty;
-            await AppointmentService.CancelAppointmentAsync(id);
-            appointments = await AppointmentService.GetAppointmentsAsync(); // Refresh list
-        }
-        catch (Exception ex)
-        {
-            errorMessage = ex.Message;
-        }
-    }
 }

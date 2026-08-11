@@ -1,13 +1,15 @@
-﻿@* ClinicManagement.Client/Pages/Billing/BillingDashboard.razor *@
-@page "/billing"
+﻿@page "/billing"
 @inject ClinicManagement.Client.Services.BillClientService BillService
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<h3>Receptionist Billing Dashboard</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-receipt text-success me-2"></i> Billing & Invoice History</h3>
+</div>
+
 @if (!string.IsNullOrEmpty(errorMessage))
 {
-    <div class="alert alert-danger alert-dismissible fade show">
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
         <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
     </div>
@@ -15,32 +17,36 @@
 
 @if (isLoading)
 {
-    <p><em>Loading billing data...</em></p>
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
 else
 {
     <!-- Section 1: Generate New Bills -->
-    <div class="card mb-4 border-primary">
-        <div class="card-header bg-primary text-white">
-            <strong>Appointments Ready for Billing</strong>
+    <div class="card mb-4 border-primary shadow-sm">
+        <div class="card-header bg-primary text-white fw-bold">
+            <i class="bi bi-plus-circle me-1"></i> Generate New Invoice
         </div>
         <div class="card-body">
             @if (!completedAppointments.Any())
             {
-                <p class="text-muted mb-0">No pending appointments to bill.</p>
+                <p class="text-muted mb-0"><i class="bi bi-check2-all text-success me-1"></i> No pending appointments require billing at this time.</p>
             }
             else
             {
-                <div class="d-flex align-items-center">
-                    <select @bind="selectedAppointmentId" class="form-select me-3" style="max-width: 400px;">
+                <div class="d-flex align-items-center gap-3">
+                    <select @bind="selectedAppointmentId" class="form-select shadow-sm" style="max-width: 500px;" aria-label="Select appointment to bill">
                         <option value="0">-- Select an Appointment to Bill --</option>
                         @foreach (var appt in completedAppointments)
                         {
                             <option value="@appt.Id">@appt.AppointmentDate.ToString("g") - @appt.PatientName (Dr. @appt.DoctorName)</option>
                         }
                     </select>
-                    <button class="btn btn-success" @onclick="GenerateBill" disabled="@(selectedAppointmentId == 0)">
-                        Generate Invoice
+                    <button class="btn btn-success shadow-sm fw-bold" @onclick="GenerateBill" disabled="@(selectedAppointmentId == 0)">
+                        <i class="bi bi-receipt-cutoff me-1"></i> Generate Invoice
                     </button>
                 </div>
             }
@@ -48,77 +54,89 @@ else
     </div>
 
     <!-- Section 2: View All Bills -->
-    <div class="card">
-        <div class="card-header bg-dark text-white">
-            <strong>Invoice History</strong>
-        </div>
-        <div class="card-body p-0">
-            @if (!bills.Any())
-            {
-                <p class="p-3 text-muted mb-0">No bills have been generated yet.</p>
-            }
-            else
-            {
-                <table class="table table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Patient</th>
-                            <th>Doctor & Speciality</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var bill in bills)
-                        {
-                            <tr>
-                                <td>@bill.BillDate.ToString("g")</td>
-                                <td>@bill.PatientName</td>
-                                <td>@bill.DoctorName (@bill.DoctorSpeciality)</td>
-                                <td><strong>@bill.ConsultationCharge.ToString("C")</strong></td>
-                                <td>
-                                    @if (bill.IsPaid)
-                                    {
-                                        <span class="badge bg-success">Paid</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger">Unpaid</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (!bill.IsPaid)
-                                    {
-                                        <button class="btn btn-sm btn-outline-success me-2" @onclick="() => HandleMarkAsPaid(bill.Id)">
-                                            <i class="bi bi-check-circle"></i> Pay
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => HandleDeleteBill(bill.Id)" title="Cancel Unpaid Invoice">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted"><i class="bi bi-lock-fill text-secondary"></i> Locked</span>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            }
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0 text-dark fw-bold">Invoice History</h5>
+
+        <!-- Search Bar -->
+        <div class="input-group w-50 shadow-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0" placeholder="Search by patient, doctor, or status (paid/unpaid)..."
+                   value="@searchTerm" @oninput="FilterBills" aria-label="Search bills" />
         </div>
     </div>
+
+    @if (!filteredBills.Any())
+    {
+        <div class="alert alert-light border text-center text-muted p-5 shadow-sm">
+            <i class="bi bi-search fs-1 d-block mb-3"></i>
+            No invoices found matching your search.
+        </div>
+    }
+    else
+    {
+        <!-- SCROLLABLE CONTAINER -->
+        <div class="table-responsive border rounded shadow-sm" style="max-height: 500px; overflow-y: auto;">
+            <table class="table table-hover table-striped mb-0 align-middle">
+                <thead class="table-dark sticky-top">
+                    <tr>
+                        <th>Date</th>
+                        <th>Patient</th>
+                        <th>Doctor & Speciality</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var bill in filteredBills)
+                    {
+                        <tr>
+                            <td class="fw-bold">@bill.BillDate.ToString("g")</td>
+                            <td>@bill.PatientName</td>
+                            <td>Dr. @bill.DoctorName <span class="text-muted small d-block">@bill.DoctorSpeciality</span></td>
+                            <td class="fw-bold text-success">@bill.ConsultationCharge.ToString("C")</td>
+                            <td>
+                                @if (bill.IsPaid)
+                                {
+                                    <span class="badge bg-success border border-success">Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger border border-danger">Unpaid</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (!bill.IsPaid)
+                                {
+                                    <button class="btn btn-sm btn-outline-success me-1 shadow-sm" @onclick="() => HandleMarkAsPaid(bill.Id)" title="Collect Payment">
+                                        <i class="bi bi-cash-coin"></i> Pay
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger shadow-sm" @onclick="() => HandleDeleteBill(bill.Id)" title="Cancel Unpaid Invoice">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small" title="Paid invoices are permanently locked"><i class="bi bi-lock-fill text-secondary"></i> Locked</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 }
 
 @code {
     private List<ClinicManagement.Shared.DTOs.ConsultationBillDto> bills = new();
+    private List<ClinicManagement.Shared.DTOs.ConsultationBillDto> filteredBills = new();
     private List<ClinicManagement.Shared.DTOs.AppointmentDto> completedAppointments = new();
+
     private int selectedAppointmentId = 0;
     private bool isLoading = true;
     private string errorMessage = string.Empty;
-
+    private string searchTerm = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,8 +152,6 @@ else
 
         // Load ONLY appointments that the doctor has "Completed" but haven't been billed yet
         var allAppointments = await AppointmentService.GetAppointmentsAsync();
-
-        // We filter out appointments that already have a bill generated to avoid duplicates in the dropdown
         var billedAppointmentIds = bills.Select(b => b.AppointmentId).ToList();
 
         completedAppointments = allAppointments
@@ -144,22 +160,47 @@ else
                     .ToList();
 
         selectedAppointmentId = 0;
+
+        // Apply filter immediately so it respects the search bar after generating or paying a bill
+        FilterBills(new ChangeEventArgs { Value = searchTerm });
+
         isLoading = false;
+    }
+
+    private void FilterBills(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredBills = bills;
+        }
+        else
+        {
+            var lowerSearch = searchTerm.ToLowerInvariant();
+            filteredBills = bills
+                .Where(b => b.PatientName.ToLowerInvariant().Contains(lowerSearch) ||
+                            b.DoctorName.ToLowerInvariant().Contains(lowerSearch) ||
+                            (b.IsPaid ? "paid" : "unpaid").Contains(lowerSearch))
+                .ToList();
+        }
     }
 
     private async Task GenerateBill()
     {
         if (selectedAppointmentId > 0)
         {
-            await BillService.GenerateBillAsync(selectedAppointmentId);
-            await LoadData(); // Refresh everything
+            try
+            {
+                errorMessage = string.Empty;
+                await BillService.GenerateBillAsync(selectedAppointmentId);
+                await LoadData(); // Refresh everything
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+            }
         }
-    }
-
-    private async Task MarkAsPaid(int billId)
-    {
-        await BillService.MarkAsPaidAsync(billId);
-        await LoadData(); // Refresh everything
     }
 
     private async Task HandleMarkAsPaid(int billId)

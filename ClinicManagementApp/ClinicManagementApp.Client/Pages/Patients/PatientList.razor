@@ -3,7 +3,9 @@
 @inject ClinicManagement.Client.Services.PatientClientService PatientService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
-<h3>Patients Directory</h3>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="bi bi-people text-info me-2"></i> Patients Directory</h3>
+</div>
 
 @if (!string.IsNullOrEmpty(errorMessage))
 {
@@ -13,48 +15,75 @@
     </div>
 }
 
-<a href="/patients/edit" class="btn btn-primary mb-3">Register New Patient</a>
+<!-- ACTION BAR: Button and Search side-by-side -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="/patients/edit" class="btn btn-primary fw-bold shadow-sm">+ Register New Patient</a>
+
+    <div class="input-group w-50 shadow-sm">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0" placeholder="Search patients by name or contact..."
+               value="@searchTerm" @oninput="FilterPatients" aria-label="Search patients" />
+    </div>
+</div>
 
 @if (patients == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-info" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
-else if (!patients.Any())
+else if (!filteredPatients.Any())
 {
-    <p>No patients found. Please register one.</p>
+    <div class="alert alert-light border text-center text-muted p-5">
+        <i class="bi bi-search fs-1 d-block mb-3"></i>
+        No patients found matching your search.
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Gender</th>
-                <th>Contact</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var patient in patients)
-            {
+    <!-- SCROLLABLE CONTAINER -->
+    <div class="table-responsive border rounded shadow-sm" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-hover table-striped mb-0 align-middle">
+            <thead class="table-dark sticky-top">
                 <tr>
-                    <td>@patient.FullName</td>
-                    <td>@patient.Age</td>
-                    <td>@patient.Gender</td>
-                    <td>@patient.ContactNumber</td>
-                    <td>
-                        <a href="/patients/edit/@patient.Id" class="btn btn-sm btn-warning">Edit</a>
-                        <button @onclick="() => DeletePatient(patient.Id)" class="btn btn-sm btn-danger">Delete</button>
-                    </td>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Gender</th>
+                    <th>Contact</th>
+                    <th class="text-end">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var patient in filteredPatients)
+                {
+                    <tr>
+                        <td class="fw-bold">@patient.FullName</td>
+                        <td>@patient.Age</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">@patient.Gender</span>
+                        </td>
+                        <td><i class="bi bi-telephone text-muted me-1"></i> @patient.ContactNumber</td>
+                        <td class="text-end">
+                            <a href="/patients/edit/@patient.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit Patient">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button @onclick="() => DeletePatient(patient.Id)" class="btn btn-sm btn-outline-danger" title="Delete Patient">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {
     private List<ClinicManagement.Shared.DTOs.PatientDto>? patients;
+    private List<ClinicManagement.Shared.DTOs.PatientDto> filteredPatients = new();
+    private string searchTerm = string.Empty;
     private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
@@ -65,19 +94,39 @@ else
     private async Task LoadPatients()
     {
         patients = await PatientService.GetPatientsAsync();
+
+        // Apply filter immediately so it respects the search bar after a delete operation
+        FilterPatients(new ChangeEventArgs { Value = searchTerm });
+    }
+
+    private void FilterPatients(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredPatients = patients ?? new();
+        }
+        else
+        {
+            filteredPatients = (patients ?? new())
+                .Where(p => p.FullName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                            p.ContactNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
     }
 
     private async Task DeletePatient(int id)
     {
         try
         {
-            errorMessage = string.Empty; // Clear previous errors
+            errorMessage = string.Empty;
             await PatientService.DeletePatientAsync(id);
-            patients = await PatientService.GetPatientsAsync(); // Refresh list on success
+            await LoadPatients(); // Refresh list on success
         }
         catch (Exception ex)
         {
-            errorMessage = ex.Message; // Show the specific business rule error!
+            errorMessage = ex.Message;
         }
     }
 }
