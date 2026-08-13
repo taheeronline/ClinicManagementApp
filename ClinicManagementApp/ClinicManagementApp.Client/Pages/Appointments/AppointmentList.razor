@@ -1,5 +1,6 @@
 ﻿@page "/appointments"
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
+@inject ClinicManagement.Client.Services.LoadingService LoadingService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,11 +18,17 @@
 <!-- ACTION BAR: Button and Search side-by-side -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="/appointments/edit" class="btn btn-primary fw-bold shadow-sm">+ Book New Appointment</a>
-
-    <div class="input-group w-50 shadow-sm">
-        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-        <input type="text" class="form-control border-start-0" placeholder="Search by patient, doctor, or status..."
-               value="@searchTerm" @oninput="FilterAppointments" aria-label="Search appointments" />
+    <div class="d-flex gap-2 align-items-center">
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0" placeholder="Search by patient, doctor, or status..."
+                   value="@searchTerm" @oninput="OnSearchChanged" aria-label="Search appointments" />
+        </div>
+        <div class="d-flex gap-1 align-items-center">
+            <input type="date" class="form-control form-control-sm" @bind="fromDate" @bind:event="oninput" @onchange="ApplyFilters" title="From date" />
+            <input type="date" class="form-control form-control-sm" @bind="toDate" @bind:event="oninput" @onchange="ApplyFilters" title="To date" />
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ClearDateFilters" title="Clear date filters">Clear</button>
+        </div>
     </div>
 </div>
 
@@ -95,6 +102,8 @@ else
     private List<ClinicManagement.Shared.DTOs.AppointmentDto> filteredAppointments = new();
     private string searchTerm = string.Empty;
     private string errorMessage = string.Empty;
+    private DateTime? fromDate;
+    private DateTime? toDate;
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,25 +115,45 @@ else
         appointments = await AppointmentService.GetAppointmentsAsync();
 
         // Apply filter immediately so it respects the search bar after a cancel operation
-        FilterAppointments(new ChangeEventArgs { Value = searchTerm });
+        ApplyFilters();
     }
 
-    private void FilterAppointments(ChangeEventArgs e)
+    private void OnSearchChanged(ChangeEventArgs e)
     {
         searchTerm = e.Value?.ToString() ?? string.Empty;
+        ApplyFilters();
+    }
 
-        if (string.IsNullOrWhiteSpace(searchTerm))
+    private void ApplyFilters()
+    {
+        var list = appointments ?? new List<ClinicManagement.Shared.DTOs.AppointmentDto>();
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            filteredAppointments = appointments ?? new();
+            list = list.Where(a => a.PatientName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                                   a.DoctorName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                                   a.Status.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                       .ToList();
         }
-        else
+
+        if (fromDate.HasValue)
         {
-            filteredAppointments = (appointments ?? new())
-                .Where(a => a.PatientName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                            a.DoctorName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                            a.Status.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            list = list.Where(a => a.AppointmentDate.Date >= fromDate.Value.Date).ToList();
         }
+
+        if (toDate.HasValue)
+        {
+            list = list.Where(a => a.AppointmentDate.Date <= toDate.Value.Date).ToList();
+        }
+
+        filteredAppointments = list;
+    }
+
+    private void ClearDateFilters()
+    {
+        fromDate = null;
+        toDate = null;
+        ApplyFilters();
     }
 
     private async Task CancelAppointment(int id)
@@ -132,12 +161,17 @@ else
         try
         {
             errorMessage = string.Empty;
+            LoadingService.Show("Cancelling appointment...");
             await AppointmentService.CancelAppointmentAsync(id);
             await LoadAppointments(); // Refresh list on success
         }
         catch (Exception ex)
         {
             errorMessage = ex.Message;
+        }
+        finally
+        {
+            LoadingService.Hide();
         }
     }
 

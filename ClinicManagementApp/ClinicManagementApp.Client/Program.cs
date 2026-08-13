@@ -10,5 +10,6 @@ builder.Services.AddScoped<PatientClientService>();
 builder.Services.AddScoped<AppointmentClientService>();
 builder.Services.AddScoped<PatientRecordClientService>();
 builder.Services.AddScoped<BillClientService>();
+builder.Services.AddSingleton<LoadingService>();
 
 await builder.Build().RunAsync();
