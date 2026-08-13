@@ -1,5 +1,7 @@
 ﻿@page "/login"
+@attribute [AllowAnonymous]
 @using ClinicManagement.Shared.DTOs
+@using Microsoft.AspNetCore.Authorization
 @inject ClinicManagement.Client.Services.AuthClientService AuthService
 @inject NavigationManager NavigationManager
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
@@ -19,6 +21,23 @@
 
                     <EditForm Model="loginDto" OnValidSubmit="HandleLogin">
                         <DataAnnotationsValidator />
+
+                        <!-- LOGIN TYPE SELECTION -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">I am a...</label>
+                            <InputRadioGroup @bind-Value="loginDto.UserType">
+                                <div class="d-flex gap-3 mt-1">
+                                    <div class="form-check">
+                                        <InputRadio Value="@("Staff")" class="form-check-input" id="typeStaff" />
+                                        <label class="form-check-label" for="typeStaff">Staff / Admin</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <InputRadio Value="@("Doctor")" class="form-check-input" id="typeDoctor" />
+                                        <label class="form-check-label" for="typeDoctor">Doctor</label>
+                                    </div>
+                                </div>
+                            </InputRadioGroup>
+                        </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Username</label>
@@ -57,6 +76,7 @@
             var response = await AuthService.LoginAsync(loginDto);
             if (response.IsSuccessful)
             {
+                // Redirect to the home page (Dashboard) upon success
                 NavigationManager.NavigateTo("/", forceLoad: true);
             }
             else

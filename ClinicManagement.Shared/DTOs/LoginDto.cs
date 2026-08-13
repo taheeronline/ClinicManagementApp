@@ -9,5 +9,8 @@ namespace ClinicManagement.Shared.DTOs
 
         [Required(ErrorMessage = "Password is required.")]
         public string Password { get; set; } = string.Empty;
+
+        // NEW FIELD: Default to Staff
+        public string UserType { get; set; } = "Staff";
     }
 }

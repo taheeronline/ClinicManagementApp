@@ -22,23 +22,28 @@ namespace ClinicManagementApp.Services
 
         public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
         {
-            // 1. Check Users table
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.LoginName == loginDto.LoginName && u.IsActive);
-            if (user != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+            if (loginDto.UserType == "Staff")
             {
-                user.LastLogin = DateTime.Now;
-                await _context.SaveChangesAsync();
-                return new AuthResponseDto { IsSuccessful = true, Token = GenerateJwtToken(user.Id.ToString(), user.Name, user.Role) };
+                // Check Users table
+                var user = await _context.Users.SingleOrDefaultAsync(u => u.LoginName == loginDto.LoginName && u.IsActive);
+                if (user != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash))
+                {
+                    user.LastLogin = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                    return new AuthResponseDto { IsSuccessful = true, Token = GenerateJwtToken(user.Id.ToString(), user.Name, user.Role) };
+                }
+            }
+            else if (loginDto.UserType == "Doctor")
+            {
+                // Check Doctors table
+                var doctor = await _context.Doctors.SingleOrDefaultAsync(d => d.LoginName == loginDto.LoginName && d.IsActive);
+                if (doctor != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, doctor.PasswordHash))
+                {
+                    return new AuthResponseDto { IsSuccessful = true, Token = GenerateJwtToken(doctor.Id.ToString(), $"{doctor.FirstName} {doctor.LastName}", "Doctor") };
+                }
             }
 
-            // 2. Check Doctors table
-            var doctor = await _context.Doctors.SingleOrDefaultAsync(d => d.LoginName == loginDto.LoginName && d.IsActive);
-            if (doctor != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, doctor.PasswordHash))
-            {
-                return new AuthResponseDto { IsSuccessful = true, Token = GenerateJwtToken(doctor.Id.ToString(), $"{doctor.FirstName} {doctor.LastName}", "Doctor") };
-            }
-
-            return new AuthResponseDto { IsSuccessful = false, ErrorMessage = "Invalid username or password." };
+            return new AuthResponseDto { IsSuccessful = false, ErrorMessage = "Invalid username, password, or login type." };
         }
 
         private string GenerateJwtToken(string id, string name, string role)

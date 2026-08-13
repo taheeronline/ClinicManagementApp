@@ -1,5 +1,7 @@
 ﻿@* ClinicManagement.Client/Pages/Dashboard.razor *@
 @page "/"
+@using Microsoft.AspNetCore.Authorization
+@* @attribute [Authorize] *@
 @inject ClinicManagement.Client.Services.DoctorClientService DoctorService
 @inject ClinicManagement.Client.Services.PatientClientService PatientService
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService

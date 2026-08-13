@@ -17,12 +17,26 @@ namespace ClinicManagement.Client.AuthHelper
 
         public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var token = await _localStorage.GetItemAsync<string>(TokenKey);
-            if (string.IsNullOrWhiteSpace(token))
-                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            try
+            {
+                var token = await _localStorage.GetItemAsync<string>(TokenKey);
 
-            var identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
-            return new AuthenticationState(new ClaimsPrincipal(identity));
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+                }
+
+                var identity = new ClaimsIdentity(ParseClaimsFromJwt(token), "jwt");
+                var user = new ClaimsPrincipal(identity);
+
+                return new AuthenticationState(user);
+            }
+            catch
+            {
+                // If this runs on the server during pre-rendering, LocalStorage isn't available.
+                // We safely catch the error and return an unauthenticated state.
+                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+            }
         }
 
         public void NotifyUserLoggedIn(string token)
