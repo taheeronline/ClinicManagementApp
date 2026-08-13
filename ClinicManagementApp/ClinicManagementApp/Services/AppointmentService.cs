@@ -1,7 +1,7 @@
-﻿using ClinicManagementApp.Data;
+﻿using ClinicManagement.Shared.DTOs;
+using ClinicManagementApp.Data;
 using ClinicManagementApp.Exceptions;
 using ClinicManagementApp.Models;
-using ClinicManagement.Shared.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagementApp.Services

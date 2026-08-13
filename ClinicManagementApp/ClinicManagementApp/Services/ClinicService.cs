@@ -1,7 +1,7 @@
 ﻿// ClinicManagementApp/Services/ClinicService.cs
+using ClinicManagement.Shared.DTOs;
 using ClinicManagementApp.Data;
 using ClinicManagementApp.Models;
-using ClinicManagement.Shared.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace ClinicManagementApp.Services

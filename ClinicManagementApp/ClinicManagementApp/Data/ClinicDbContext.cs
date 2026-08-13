@@ -18,6 +18,7 @@ namespace ClinicManagementApp.Data
         public DbSet<PatientRecord> PatientRecords { get; set; }
         public DbSet<Prescription> Prescriptions { get; set; }
         public DbSet<ConsultationBill> ConsultationBills { get; set; }
+        public DbSet<User> Users { get; set; }
 
         // ADD THIS METHOD:
         protected override void OnModelCreating(ModelBuilder modelBuilder)

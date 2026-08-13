@@ -2,7 +2,10 @@ using ClinicManagementApp.Components;
 using ClinicManagementApp.Data;
 using ClinicManagementApp.Middlewares;
 using ClinicManagementApp.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,10 +28,40 @@ builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IPatientRecordService, PatientRecordService>();
 builder.Services.AddScoped<IBillService, BillService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// Add this with your other services
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Add JWT Config
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Secret"]!))
+    };
+});
+builder.Services.AddCascadingAuthenticationState(); // Exposes auth state to Blazor
 
 builder.Services.AddControllers(); // 1. ADD THIS before builder.Build()
 
 var app = builder.Build();
+
+// Ensure these are in the HTTP pipeline (before app.MapControllers())
+app.UseAuthentication();
+//app.UseAuthorization();
 
 app.MapControllers();
 

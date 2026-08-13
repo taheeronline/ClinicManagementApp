@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using ClinicManagement.Shared.Enums;
+﻿using ClinicManagement.Shared.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace ClinicManagement.Shared.DTOs
 {

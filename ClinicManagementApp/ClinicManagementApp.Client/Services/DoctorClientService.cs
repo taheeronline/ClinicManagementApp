@@ -20,12 +20,17 @@ namespace ClinicManagement.Client.Services
         public async Task<DoctorDto> GetDoctorByIdAsync(int id) =>
             await _httpClient.GetFromJsonAsync<DoctorDto>($"api/doctors/{id}");
 
-        public async Task CreateDoctorAsync(DoctorDto doctorDto) =>
-            await _httpClient.PostAsJsonAsync("api/doctors", doctorDto);
+        public async Task CreateDoctorAsync(DoctorDto doctorDto)
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/doctors", doctorDto);
+            await HandleErrorsAsync(response); // <-- Added error handling
+        }
 
-        public async Task UpdateDoctorAsync(int id, DoctorDto doctorDto) =>
-            await _httpClient.PutAsJsonAsync($"api/doctors/{id}", doctorDto);
-
+        public async Task UpdateDoctorAsync(int id, DoctorDto doctorDto)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"api/doctors/{id}", doctorDto);
+            await HandleErrorsAsync(response); // <-- Added error handling
+        }
         public async Task DeleteDoctorAsync(int id)
         {
             var response = await _httpClient.DeleteAsync($"api/doctors/{id}");

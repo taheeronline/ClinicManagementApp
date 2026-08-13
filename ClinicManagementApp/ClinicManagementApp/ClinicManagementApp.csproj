@@ -10,6 +10,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\ClinicManagement.Shared\ClinicManagement.Shared.csproj" />
     <ProjectReference Include="..\ClinicManagementApp.Client\ClinicManagementApp.Client.csproj" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.10" />

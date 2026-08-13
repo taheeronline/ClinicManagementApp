@@ -1,5 +1,4 @@
-﻿@* ClinicManagement.Client/Pages/Doctors/DoctorEdit.razor *@
-@page "/doctors/edit"
+﻿@page "/doctors/edit"
 @page "/doctors/edit/{Id:int}"
 @inject ClinicManagement.Client.Services.DoctorClientService DoctorService
 @inject NavigationManager NavigationManager
@@ -7,36 +6,76 @@
 
 <h3>@(Id.HasValue ? "Edit Doctor" : "Add New Doctor")</h3>
 
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
 <EditForm Model="doctor" OnValidSubmit="HandleSubmit">
     <DataAnnotationsValidator />
-    <ValidationSummary />
 
-    <div class="mb-3">
-        <label>First Name</label>
-        <InputText @bind-Value="doctor.FirstName" class="form-control" />
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">Professional Details</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">First Name</label>
+                    <InputText @bind-Value="doctor.FirstName" class="form-control" />
+                    <ValidationMessage For="@(() => doctor.FirstName)" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Last Name</label>
+                    <InputText @bind-Value="doctor.LastName" class="form-control" />
+                    <ValidationMessage For="@(() => doctor.LastName)" />
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Speciality</label>
+                    <InputText @bind-Value="doctor.Speciality" class="form-control" />
+                    <ValidationMessage For="@(() => doctor.Speciality)" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Consultation Fee</label>
+                    <InputNumber @bind-Value="doctor.ConsultationFee" class="form-control" />
+                    <ValidationMessage For="@(() => doctor.ConsultationFee)" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Phone Number</label>
+                    <InputText @bind-Value="doctor.PhoneNumber" class="form-control" />
+                    <ValidationMessage For="@(() => doctor.PhoneNumber)" />
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label>Last Name</label>
-        <InputText @bind-Value="doctor.LastName" class="form-control" />
+    <!-- NEW SECTION: ACCOUNT CREDENTIALS -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-dark text-white">Login Credentials</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Login Username *</label>
+                    <InputText @bind-Value="doctor.LoginName" class="form-control" />
+                    <ValidationMessage For="@(() => doctor.LoginName)" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Password @(Id.HasValue ? "(Leave blank to keep current)" : "*")</label>
+                    <InputText @bind-Value="doctor.Password" type="password" class="form-control" />
+                    @if (!Id.HasValue && string.IsNullOrWhiteSpace(doctor.Password))
+                    {
+                        <span class="text-danger small">Password is required for new doctors.</span>
+                    }
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label>Speciality</label>
-        <InputText @bind-Value="doctor.Speciality" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label>Consultation Fee</label>
-        <InputNumber @bind-Value="doctor.ConsultationFee" class="form-control" />
-    </div>
-
-    <div class="mb-3">
-        <label>Phone Number</label>
-        <InputText @bind-Value="doctor.PhoneNumber" class="form-control" />
-        <ValidationMessage For="@(() => doctor.PhoneNumber)" />
-    </div>
-    <button type="submit" class="btn btn-success">Save</button>
+    <button type="submit" class="btn btn-success me-2">Save Doctor</button>
     <a href="/doctors" class="btn btn-secondary">Cancel</a>
 </EditForm>
 
@@ -45,26 +84,51 @@
     public int? Id { get; set; }
 
     private ClinicManagement.Shared.DTOs.DoctorDto doctor = new();
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         if (Id.HasValue)
         {
-            doctor = await DoctorService.GetDoctorByIdAsync(Id.Value);
+            try
+            {
+                doctor = await DoctorService.GetDoctorByIdAsync(Id.Value);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+            }
         }
     }
 
     private async Task HandleSubmit()
     {
-        if (Id.HasValue)
+        try
         {
-            await DoctorService.UpdateDoctorAsync(Id.Value, doctor);
-        }
-        else
-        {
-            await DoctorService.CreateDoctorAsync(doctor);
-        }
+            errorMessage = string.Empty;
 
-        NavigationManager.NavigateTo("/doctors");
+            // Manual check for password on creation
+            if (!Id.HasValue && string.IsNullOrWhiteSpace(doctor.Password))
+            {
+                errorMessage = "Password is required for new doctors.";
+                return;
+            }
+
+            if (Id.HasValue)
+            {
+                await DoctorService.UpdateDoctorAsync(Id.Value, doctor);
+            }
+            else
+            {
+                await DoctorService.CreateDoctorAsync(doctor);
+            }
+
+            NavigationManager.NavigateTo("/doctors");
+        }
+        catch (Exception ex)
+        {
+            // This catches the Duplicate Username error from the API!
+            errorMessage = ex.Message;
+        }
     }
 }

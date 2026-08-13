@@ -1,0 +1,139 @@
+﻿@* ClinicManagement.Client/Pages/Users/UserEdit.razor *@
+@page "/users/edit"
+@page "/users/edit/{Id:int}"
+@inject ClinicManagement.Client.Services.UserClientService UserService
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>@(Id.HasValue ? "Edit User" : "Register New User")</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+<EditForm Model="user" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Full Name</label>
+            <InputText @bind-Value="user.Name" class="form-control" />
+            <ValidationMessage For="@(() => user.Name)" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Role</label>
+            <InputSelect @bind-Value="user.Role" class="form-select">
+                <option value="">-- Select Role --</option>
+                <option value="Receptionist">Receptionist</option>
+                <option value="Manager">Manager</option>
+                <option value="Admin">Admin</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => user.Role)" />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Email</label>
+            <InputText @bind-Value="user.Email" type="email" class="form-control" />
+            <ValidationMessage For="@(() => user.Email)" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Phone</label>
+            <InputText @bind-Value="user.Phone" class="form-control" />
+            <ValidationMessage For="@(() => user.Phone)" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Address</label>
+        <InputText @bind-Value="user.Address" class="form-control" />
+    </div>
+
+    <hr class="my-4" />
+    <h5 class="mb-3">Login Credentials</h5>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Login Username *</label>
+            <InputText @bind-Value="user.LoginName" class="form-control" />
+            <ValidationMessage For="@(() => user.LoginName)" />
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Password @(Id.HasValue ? "(Leave blank to keep current)" : "*")</label>
+            <InputText @bind-Value="user.Password" type="password" class="form-control" />
+            @if (!Id.HasValue && string.IsNullOrWhiteSpace(user.Password))
+            {
+                <span class="text-danger small">Password is required for new users.</span>
+            }
+        </div>
+    </div>
+
+    @if (Id.HasValue)
+    {
+        <div class="mb-4 form-check">
+            <InputCheckbox @bind-Value="user.IsActive" class="form-check-input" id="isActiveCheck" />
+            <label class="form-check-label fw-bold" for="isActiveCheck">Account is Active</label>
+        </div>
+    }
+
+    <button type="submit" class="btn btn-success me-2">Save User</button>
+    <a href="/users" class="btn btn-secondary">Cancel</a>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private ClinicManagement.Shared.DTOs.UserDto user = new();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue)
+        {
+            try
+            {
+                user = await UserService.GetUserByIdAsync(Id.Value);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+            }
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            errorMessage = string.Empty;
+
+            // Manual check for password on creation
+            if (!Id.HasValue && string.IsNullOrWhiteSpace(user.Password))
+            {
+                errorMessage = "Password is required for new users.";
+                return;
+            }
+
+            if (Id.HasValue)
+            {
+                await UserService.UpdateUserAsync(Id.Value, user);
+            }
+            else
+            {
+                await UserService.CreateUserAsync(user);
+            }
+
+            NavigationManager.NavigateTo("/users");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

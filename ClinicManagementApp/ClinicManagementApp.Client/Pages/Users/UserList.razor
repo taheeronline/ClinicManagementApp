@@ -1,0 +1,87 @@
+﻿@* ClinicManagement.Client/Pages/Users/UserList.razor *@
+@page "/users"
+@inject ClinicManagement.Client.Services.UserClientService UserService
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<h3>System Users (Staff)</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
+
+<a href="/users/edit" class="btn btn-primary mb-3">Register New User</a>
+
+@if (users == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!users.Any())
+{
+    <p>No users found in the system.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Login</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Last Login</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.Name</td>
+                    <td>@user.LoginName</td>
+                    <td><span class="badge bg-info text-dark">@user.Role</span></td>
+                    <td>
+                        @(user.IsActive ? "Active" : "Inactive")
+                    </td>
+                    <td>@(user.LastLogin?.ToString("g") ?? "Never")</td>
+                    <td>
+                        <a href="/users/edit/@user.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <button @onclick="() => DeleteUser(user.Id)" class="btn btn-sm btn-danger">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ClinicManagement.Shared.DTOs.UserDto>? users;
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        users = await UserService.GetUsersAsync();
+    }
+
+    private async Task DeleteUser(int id)
+    {
+        try
+        {
+            errorMessage = string.Empty;
+            await UserService.DeleteUserAsync(id);
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+}

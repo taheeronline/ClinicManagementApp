@@ -1,5 +1,4 @@
-﻿// ClinicManagement.Shared/DTOs/DoctorDto.cs
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ClinicManagement.Shared.DTOs
 {
@@ -31,5 +30,14 @@ namespace ClinicManagement.Shared.DTOs
         public bool IsActive { get; set; } = true;
 
         public string FullName => $"{FirstName} {LastName}";
+
+        // --- NEW FIELDS ---
+        [Required(ErrorMessage = "Login Username is required")]
+        [StringLength(50, ErrorMessage = "Username cannot exceed 50 characters")]
+        public string LoginName { get; set; } = string.Empty;
+
+        // We only use this for transferring the typed password from the UI to the Server.
+        // It is optional on updates (so the doctor can keep their old password).
+        public string? Password { get; set; }
     }
 }
