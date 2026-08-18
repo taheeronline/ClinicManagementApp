@@ -26,7 +26,6 @@
         </div>
         <div class="d-flex gap-1 align-items-center">
             <input type="date" class="form-control form-control-sm" @bind="fromDate" @bind:event="oninput" @onchange="ApplyFilters" title="From date" />
-            <input type="date" class="form-control form-control-sm" @bind="toDate" @bind:event="oninput" @onchange="ApplyFilters" title="To date" />
             <button class="btn btn-outline-secondary btn-sm" @onclick="ClearDateFilters" title="Clear date filters">Clear</button>
         </div>
     </div>
@@ -103,7 +102,6 @@ else
     private string searchTerm = string.Empty;
     private string errorMessage = string.Empty;
     private DateTime? fromDate;
-    private DateTime? toDate;
 
     protected override async Task OnInitializedAsync()
     {
@@ -141,18 +139,12 @@ else
             list = list.Where(a => a.AppointmentDate.Date >= fromDate.Value.Date).ToList();
         }
 
-        if (toDate.HasValue)
-        {
-            list = list.Where(a => a.AppointmentDate.Date <= toDate.Value.Date).ToList();
-        }
-
         filteredAppointments = list;
     }
 
     private void ClearDateFilters()
     {
         fromDate = null;
-        toDate = null;
         ApplyFilters();
     }
 
