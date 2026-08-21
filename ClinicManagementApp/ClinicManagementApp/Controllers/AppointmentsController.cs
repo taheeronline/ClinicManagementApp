@@ -25,22 +25,44 @@ namespace ClinicManagementApp.Controllers
         [HttpPost]
         public async Task<ActionResult<AppointmentDto>> CreateAppointment(AppointmentDto appointmentDto)
         {
-            var createdAppointment = await _appointmentService.CreateAppointmentAsync(appointmentDto);
-            return CreatedAtAction(nameof(GetAppointment), new { id = createdAppointment.Id }, createdAppointment);
+            try
+            {
+                var createdAppointment = await _appointmentService.CreateAppointmentAsync(appointmentDto);
+                return CreatedAtAction(nameof(GetAppointment), new { id = createdAppointment.Id }, createdAppointment);
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAppointment(int id, AppointmentDto appointmentDto)
         {
-            await _appointmentService.UpdateAppointmentAsync(id, appointmentDto);
-            return NoContent();
+            try
+            {
+                await _appointmentService.UpdateAppointmentAsync(id, appointmentDto);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAppointment(int id)
         {
-            await _appointmentService.DeleteAppointmentAsync(id);
-            return NoContent();
+            try
+            {
+                await _appointmentService.DeleteAppointmentAsync(id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("mark-noshows")]
@@ -53,7 +75,14 @@ namespace ClinicManagementApp.Controllers
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> CancelAppointment(int id)
         {
-            await _appointmentService.CancelAppointmentAsync(id);
+            try
+            {
+                await _appointmentService.CancelAppointmentAsync(id);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
             return NoContent();
         }
     }

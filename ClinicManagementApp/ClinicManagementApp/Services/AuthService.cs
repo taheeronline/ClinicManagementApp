@@ -39,7 +39,7 @@ namespace ClinicManagementApp.Services
                 var doctor = await _context.Doctors.SingleOrDefaultAsync(d => d.LoginName == loginDto.LoginName && d.IsActive);
                 if (doctor != null && BCrypt.Net.BCrypt.Verify(loginDto.Password, doctor.PasswordHash))
                 {
-                    return new AuthResponseDto { IsSuccessful = true, Token = GenerateJwtToken(doctor.Id.ToString(), $"{doctor.FirstName} {doctor.LastName}", "Doctor") };
+                    return new AuthResponseDto { IsSuccessful = true, Token = GenerateJwtToken(doctor.Id.ToString(), $"Dr. {doctor.FirstName} {doctor.LastName}", "Doctor") };
                 }
             }
 
