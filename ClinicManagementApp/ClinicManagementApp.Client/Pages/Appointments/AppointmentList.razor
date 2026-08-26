@@ -1,7 +1,6 @@
 ﻿@page "/appointments"
 @using Microsoft.AspNetCore.Authorization
 @* Everyone can view the schedule *@
-@attribute [Authorize(Roles = "Admin,Manager,Receptionist,Doctor")]
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @inject ClinicManagement.Client.Services.LoadingService LoadingService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))

@@ -1,7 +1,6 @@
 ﻿@* ClinicManagement.Client/Pages/Patients/PatientList.razor *@
 @page "/patients"
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Admin,Manager,Receptionist")]
 @inject ClinicManagement.Client.Services.PatientClientService PatientService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
@@ -19,8 +18,11 @@
 
 <!-- ACTION BAR: Button and Search side-by-side -->
 <div class="d-flex justify-content-between align-items-center mb-3">
+    <AuthorizeView Roles="Admin,Staff,Receptionist">
+    <Authorized>
     <a href="/patients/edit" class="btn btn-primary fw-bold shadow-sm">+ Register New Patient</a>
-
+    </Authorized>
+    </AuthorizeView>
     <div class="input-group w-50 shadow-sm">
         <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
         <input type="text" class="form-control border-start-0" placeholder="Search patients by name or contact..."

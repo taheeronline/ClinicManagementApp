@@ -1,5 +1,46 @@
+@implements IDisposable
 @inject ClinicManagement.Client.Services.LoadingService LoadingService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+@if (visible)
+{
+    <div class="loading-overlay">
+        <div class="loading-card shadow-lg">
+            <div class="spinner-border text-light me-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div>
+                <div class="fw-bold text-light">Please wait...</div>
+                @if (!string.IsNullOrWhiteSpace(message))
+                {
+                    <div class="text-light small">@message</div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999; /* Forced to the absolute front */
+    }
+
+    .loading-card {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1.25rem 2rem;
+        background: #212529; /* Dark Bootstrap theme */
+        border-radius: 0.5rem;
+        min-width: 250px;
+    }
+</style>
 
 @code {
     private bool visible;
@@ -22,43 +63,3 @@
         LoadingService.OnChanged -= OnLoadingChanged;
     }
 }
-
-@if (visible)
-{
-    <div class="loading-overlay">
-        <div class="loading-card shadow-sm">
-            <div class="spinner-border text-light me-3" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <div>
-                <div class="fw-semibold text-light">Please wait...</div>
-                @if (!string.IsNullOrWhiteSpace(message))
-                {
-                    <div class="text-light small">@message</div>
-                }
-            </div>
-        </div>
-    </div>
-}
-
-<style>
-    .loading-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1050;
-    }
-
-    .loading-card {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 1rem 1.25rem;
-        background: rgba(0,0,0,0.6);
-        border-radius: 0.5rem;
-        min-width: 220px;
-    }
-</style>

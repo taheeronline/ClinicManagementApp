@@ -1,7 +1,5 @@
 ﻿@* ClinicManagement.Client/Pages/Users/UserList.razor *@
 @page "/users"
-@using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Admin")]
 @inject ClinicManagement.Client.Services.UserClientService UserService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
@@ -15,7 +13,11 @@
     </div>
 }
 
-<a href="/users/edit" class="btn btn-primary mb-3 shadow-sm">+ Register New User</a>
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <a href="/users/edit" class="btn btn-primary mb-3 shadow-sm">+ Register New User</a>
+    </Authorized>
+</AuthorizeView>
 
 @if (users == null)
 {

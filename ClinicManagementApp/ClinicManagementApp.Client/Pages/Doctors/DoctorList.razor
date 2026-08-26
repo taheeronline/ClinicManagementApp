@@ -1,7 +1,6 @@
 ﻿@* ClinicManagement.Client/Pages/Doctors/DoctorList.razor *@
 @page "/doctors"
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Admin")]
 @inject ClinicManagement.Client.Services.DoctorClientService DoctorService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
@@ -19,7 +18,11 @@
 
 <!-- ACTION BAR -->
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="/doctors/edit" class="btn btn-primary fw-bold shadow-sm">+ Add New Doctor</a>
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            <a href="/doctors/edit" class="btn btn-primary fw-bold shadow-sm">+ Add New Doctor</a>
+        </Authorized>
+    </AuthorizeView>
 
     <div class="input-group w-50 shadow-sm">
         <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>

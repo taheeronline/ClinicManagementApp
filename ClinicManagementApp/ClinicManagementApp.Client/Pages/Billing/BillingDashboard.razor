@@ -1,7 +1,6 @@
 ﻿@* ClinicManagement.Client/Pages/Billing/BillingList.razor *@
 @page "/billing"
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Admin,Manager,Receptionist")]
 @inject ClinicManagement.Client.Services.BillClientService BillService
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
@@ -30,9 +29,13 @@ else
 {
     <!-- Section 1: Generate New Bills -->
     <div class="card mb-4 border-primary shadow-sm">
-        <div class="card-header bg-primary text-white fw-bold">
-            <i class="bi bi-plus-circle me-1"></i> Generate New Invoice
-        </div>
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <div class="card-header bg-primary text-white fw-bold">
+                    <i class="bi bi-plus-circle me-1"></i> Generate New Invoice
+                </div>
+            </Authorized>
+        </AuthorizeView>>
         <div class="card-body">
             @if (!completedAppointments.Any())
             {
