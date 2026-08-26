@@ -1,0 +1,66 @@
+﻿@using ClinicManagement.Shared.DTOs
+@using System.Security.Claims
+@inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
+
+<div class="alert alert-info shadow-sm mt-3">
+    <h4><i class="bi bi-person-badge"></i> Doctor Portal</h4>
+    <p class="mb-0">Welcome to your workspace, <strong>@doctorName</strong>.</p>
+</div>
+
+@if (isLoading)
+{
+    <p>Loading your schedule...</p>
+}
+else
+{
+    <div class="card mt-4">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">My Schedule for Today</h5>
+        </div>
+        <ul class="list-group list-group-flush">
+            @if (!todaysAppointments.Any())
+            {
+                <li class="list-group-item text-muted">No appointments today.</li>
+            }
+            else
+            {
+                @foreach (var appt in todaysAppointments)
+                {
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span><strong>@appt.AppointmentDate.ToString("hh:mm tt")</strong> - @appt.PatientName</span>
+                        <span class="badge bg-primary">@appt.Status.ToString()</span>
+                    </li>
+                }
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string doctorName = "Doctor";
+    private List<AppointmentDto> todaysAppointments = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            doctorName = user.Identity.Name ?? "Doctor";
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier) ?? user.FindFirst("sub");
+
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int doctorId))
+            {
+                var allAppointments = await AppointmentService.GetAppointmentsAsync();
+                todaysAppointments = allAppointments
+                    .Where(a => a.DoctorId == doctorId && a.AppointmentDate.Date == DateTime.Today)
+                    .OrderBy(a => a.AppointmentDate)
+                    .ToList();
+            }
+        }
+        isLoading = false;
+    }
+}

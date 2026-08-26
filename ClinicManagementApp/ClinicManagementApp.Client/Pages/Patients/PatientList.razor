@@ -1,5 +1,7 @@
 ﻿@* ClinicManagement.Client/Pages/Patients/PatientList.razor *@
 @page "/patients"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin,Manager,Receptionist")]
 @inject ClinicManagement.Client.Services.PatientClientService PatientService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 

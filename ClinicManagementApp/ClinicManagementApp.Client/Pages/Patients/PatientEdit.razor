@@ -1,11 +1,21 @@
 ﻿@* ClinicManagement.Client/Pages/Patients/PatientEdit.razor *@
 @page "/patients/edit"
 @page "/patients/edit/{Id:int}"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin,Manager,Receptionist")]
 @inject ClinicManagement.Client.Services.PatientClientService PatientService
 @inject NavigationManager NavigationManager
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <h3>@(Id.HasValue ? "Edit Patient Details" : "Register New Patient")</h3>
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = string.Empty"></button>
+    </div>
+}
 
 <EditForm Model="patient" OnValidSubmit="HandleSubmit">
     <DataAnnotationsValidator />
@@ -58,7 +68,13 @@
         <InputTextArea @bind-Value="patient.MedicalHistory" class="form-control" rows="3" />
     </div>
 
-    <button type="submit" class="btn btn-success">Save Patient</button>
+    <button type="submit" class="btn btn-success" disabled="@isSubmitting">
+        @if (isSubmitting)
+        {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        }
+        Save Patient
+    </button>
     <a href="/patients" class="btn btn-secondary">Cancel</a>
 </EditForm>
 
@@ -67,6 +83,8 @@
     public int? Id { get; set; }
 
     private ClinicManagement.Shared.DTOs.PatientDto patient = new() { DateOfBirth = DateTime.Today.AddYears(-20) }; // Default to an adult
+    private string errorMessage = string.Empty;
+    private bool isSubmitting = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,15 +96,29 @@
 
     private async Task HandleSubmit()
     {
-        if (Id.HasValue)
+        try
         {
-            await PatientService.UpdatePatientAsync(Id.Value, patient);
-        }
-        else
-        {
-            await PatientService.CreatePatientAsync(patient);
-        }
+            isSubmitting = true;
+            errorMessage = string.Empty;
 
-        NavigationManager.NavigateTo("/patients");
+            if (Id.HasValue)
+            {
+                await PatientService.UpdatePatientAsync(Id.Value, patient);
+            }
+            else
+            {
+                await PatientService.CreatePatientAsync(patient);
+            }
+
+            NavigationManager.NavigateTo("/patients");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 }
