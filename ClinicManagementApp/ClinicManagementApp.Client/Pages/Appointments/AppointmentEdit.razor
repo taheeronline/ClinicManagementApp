@@ -4,7 +4,8 @@
 @inject ClinicManagement.Client.Services.DoctorClientService DoctorService
 @inject ClinicManagement.Client.Services.PatientClientService PatientService
 @inject NavigationManager NavigationManager
-@using ClinicManagement.Shared.Enums
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin,Manager,Receptionist")]
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <h3>@(Id.HasValue ? "Edit Appointment" : "Book Appointment")</h3>

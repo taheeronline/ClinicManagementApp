@@ -3,6 +3,8 @@
 @page "/users/edit/{Id:int}"
 @inject ClinicManagement.Client.Services.UserClientService UserService
 @inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <h3>@(Id.HasValue ? "Edit User" : "Register New User")</h3>

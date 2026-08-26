@@ -1,4 +1,7 @@
 ﻿@page "/appointments"
+@using Microsoft.AspNetCore.Authorization
+@* Everyone can view the schedule *@
+@attribute [Authorize(Roles = "Admin,Manager,Receptionist,Doctor")]
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @inject ClinicManagement.Client.Services.LoadingService LoadingService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
@@ -15,13 +18,23 @@
     </div>
 }
 
-<!-- ACTION BAR: Button and Search side-by-side -->
+<!-- ACTION BAR -->
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <a href="/appointments/edit" class="btn btn-primary fw-bold shadow-sm">+ Book New Appointment</a>
+
+    <!-- ONLY STAFF/ADMIN CAN BOOK NEW APPOINTMENTS -->
+    <AuthorizeView Roles="Admin,Manager,Receptionist">
+        <Authorized>
+            <a href="/appointments/edit" class="btn btn-primary fw-bold shadow-sm">+ Book New Appointment</a>
+        </Authorized>
+        <NotAuthorized>
+            <div></div> <!-- Empty div to keep flexbox alignment for doctors -->
+        </NotAuthorized>
+    </AuthorizeView>
+
     <div class="d-flex gap-2 align-items-center">
         <div class="input-group shadow-sm">
             <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" class="form-control border-start-0" placeholder="Search by patient, doctor, or status..."
+            <input type="text" class="form-control border-start-0" placeholder="Search by patient, doctor..."
                    value="@searchTerm" @oninput="OnSearchChanged" aria-label="Search appointments" />
         </div>
         <div class="d-flex gap-1 align-items-center">
@@ -34,21 +47,17 @@
 @if (appointments == null)
 {
     <div class="d-flex justify-content-center my-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
+        <div class="spinner-border text-primary" role="status"></div>
     </div>
 }
 else if (!filteredAppointments.Any())
 {
     <div class="alert alert-light border text-center text-muted p-5">
-        <i class="bi bi-search fs-1 d-block mb-3"></i>
-        No appointments found matching your search.
+        <i class="bi bi-search fs-1 d-block mb-3"></i> No appointments found matching your search.
     </div>
 }
 else
 {
-    <!-- SCROLLABLE CONTAINER -->
     <div class="table-responsive border rounded shadow-sm" style="max-height: 500px; overflow-y: auto;">
         <table class="table table-hover table-striped mb-0 align-middle">
             <thead class="table-dark sticky-top">
@@ -68,26 +77,29 @@ else
                         <td>@appt.PatientName</td>
                         <td>Dr. @appt.DoctorName</td>
                         <td>
-                            <span class="badge @GetStatusBadgeClass(appt.Status)">
-                                @appt.Status.ToString()
-                            </span>
+                            <span class="badge @GetStatusBadgeClass(appt.Status)">@appt.Status.ToString()</span>
                         </td>
                         <td class="text-end">
-                            @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
-                            {
-                                <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-outline-warning me-1" title="Edit Appointment">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <button @onclick="() => CancelAppointment(appt.Id)" class="btn btn-sm btn-outline-danger" title="Cancel Appointment">
-                                    <i class="bi bi-x-circle"></i> Cancel
-                                </button>
-                            }
-                            else
-                            {
-                                <span class="text-muted small" title="Completed/Closed/Cancelled appointments cannot be modified">
-                                    <i class="bi bi-lock-fill text-secondary"></i> Locked
-                                </span>
-                            }
+                            <AuthorizeView Roles="Admin,Manager,Receptionist" Context="authContext">
+                                <Authorized>
+                                    @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+                                    {
+                                        <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-outline-warning me-1" title="Edit Appointment">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button @onclick="() => CancelAppointment(appt.Id)" class="btn btn-sm btn-outline-danger" title="Cancel Appointment">
+                                            <i class="bi bi-x-circle"></i> Cancel
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small"><i class="bi bi-lock-fill text-secondary"></i> Locked</span>
+                                    }
+                                </Authorized>
+                                <NotAuthorized>
+                                    <span class="text-muted small"><i class="bi bi-eye"></i> View Only</span>
+                                </NotAuthorized>
+                            </AuthorizeView>
                         </td>
                     </tr>
                 }
@@ -111,8 +123,6 @@ else
     private async Task LoadAppointments()
     {
         appointments = await AppointmentService.GetAppointmentsAsync();
-
-        // Apply filter immediately so it respects the search bar after a cancel operation
         ApplyFilters();
     }
 
@@ -155,7 +165,7 @@ else
             errorMessage = string.Empty;
             LoadingService.Show("Cancelling appointment...");
             await AppointmentService.CancelAppointmentAsync(id);
-            await LoadAppointments(); // Refresh list on success
+            await LoadAppointments();
         }
         catch (Exception ex)
         {

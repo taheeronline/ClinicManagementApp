@@ -1,4 +1,7 @@
-﻿@page "/doctors"
+﻿@* ClinicManagement.Client/Pages/Doctors/DoctorList.razor *@
+@page "/doctors"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
 @inject ClinicManagement.Client.Services.DoctorClientService DoctorService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
@@ -14,7 +17,7 @@
     </div>
 }
 
-<!-- ACTION BAR: Button and Search side-by-side -->
+<!-- ACTION BAR -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <a href="/doctors/edit" class="btn btn-primary fw-bold shadow-sm">+ Add New Doctor</a>
 
@@ -42,7 +45,6 @@ else if (!filteredDoctors.Any())
 }
 else
 {
-    <!-- SCROLLABLE CONTAINER -->
     <div class="table-responsive border rounded shadow-sm" style="max-height: 500px; overflow-y: auto;">
         <table class="table table-hover table-striped mb-0 align-middle">
             <thead class="table-dark sticky-top">
@@ -89,8 +91,6 @@ else
     private async Task LoadDoctors()
     {
         doctors = await DoctorService.GetDoctorsAsync();
-
-        // Apply filter immediately so it respects the search bar after a reload or delete
         FilterDoctors(new ChangeEventArgs { Value = searchTerm });
     }
 
@@ -117,7 +117,7 @@ else
         {
             errorMessage = string.Empty;
             await DoctorService.DeleteDoctorAsync(id);
-            await LoadDoctors(); // Refresh list on success
+            await LoadDoctors();
         }
         catch (Exception ex)
         {

@@ -1,4 +1,7 @@
-﻿@page "/billing"
+﻿@* ClinicManagement.Client/Pages/Billing/BillingList.razor *@
+@page "/billing"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin,Manager,Receptionist")]
 @inject ClinicManagement.Client.Services.BillClientService BillService
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
