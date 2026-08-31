@@ -2,7 +2,6 @@
 @page "/patients/edit"
 @page "/patients/edit/{Id:int}"
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Admin,Manager,Receptionist")]
 @inject ClinicManagement.Client.Services.PatientClientService PatientService
 @inject NavigationManager NavigationManager
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))

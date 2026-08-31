@@ -3,7 +3,6 @@
 @inject ClinicManagement.Client.Services.DoctorClientService DoctorService
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Authorization
-@attribute [Authorize(Roles = "Admin")]
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
 
 <h3>@(Id.HasValue ? "Edit Doctor" : "Add New Doctor")</h3>
