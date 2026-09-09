@@ -29,13 +29,13 @@ else
 {
     <!-- Section 1: Generate New Bills -->
     <div class="card mb-4 border-primary shadow-sm">
-        <AuthorizeView Roles="Admin">
+        <AuthorizeView Roles="Admin,Manager">
             <Authorized>
                 <div class="card-header bg-primary text-white fw-bold">
                     <i class="bi bi-plus-circle me-1"></i> Generate New Invoice
                 </div>
             </Authorized>
-        </AuthorizeView>>
+        </AuthorizeView>
         <div class="card-body">
             @if (!completedAppointments.Any())
             {
@@ -112,19 +112,26 @@ else
                                 }
                             </td>
                             <td class="text-end">
-                                @if (!bill.IsPaid)
-                                {
-                                    <button class="btn btn-sm btn-outline-success me-1 shadow-sm" @onclick="() => HandleMarkAsPaid(bill.Id)" title="Collect Payment">
-                                        <i class="bi bi-cash-coin"></i> Pay
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger shadow-sm" @onclick="() => HandleDeleteBill(bill.Id)" title="Cancel Unpaid Invoice">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                }
-                                else
-                                {
-                                    <span class="text-muted small" title="Paid invoices are permanently locked"><i class="bi bi-lock-fill text-secondary"></i> Locked</span>
-                                }
+                                <AuthorizeView Roles="Admin,Manager" Context="authContext">
+                                    <Authorized>
+                                        @if (!bill.IsPaid)
+                                        {
+                                            <button class="btn btn-sm btn-outline-success me-1 shadow-sm" @onclick="() => HandleMarkAsPaid(bill.Id)" title="Collect Payment">
+                                                <i class="bi bi-cash-coin"></i> Pay
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger shadow-sm" @onclick="() => HandleDeleteBill(bill.Id)" title="Cancel Unpaid Invoice">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small" title="Paid invoices are permanently locked"><i class="bi bi-lock-fill text-secondary"></i> Locked</span>
+                                        }
+                                    </Authorized>
+                                    <NotAuthorized>
+                                        <span class="text-muted small"><i class="bi bi-eye"></i> View Only</span>
+                                    </NotAuthorized>
+                                </AuthorizeView>
                             </td>
                         </tr>
                     }

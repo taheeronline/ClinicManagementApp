@@ -61,7 +61,7 @@ var app = builder.Build();
 
 // Ensure these are in the HTTP pipeline (before app.MapControllers())
 app.UseAuthentication();
-//app.UseAuthorization();
+app.UseAuthorization();
 
 app.MapControllers();
 

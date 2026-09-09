@@ -1,6 +1,7 @@
 ﻿// ClinicManagementApp/Controllers/AppointmentsController.cs
 using ClinicManagement.Shared.DTOs;
 using ClinicManagementApp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagementApp.Controllers
@@ -22,6 +23,7 @@ namespace ClinicManagementApp.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<AppointmentDto>> GetAppointment(int id) => Ok(await _appointmentService.GetAppointmentByIdAsync(id));
 
+        [Authorize(Roles = "Admin,Manager,Receptionist")]
         [HttpPost]
         public async Task<ActionResult<AppointmentDto>> CreateAppointment(AppointmentDto appointmentDto)
         {
@@ -37,6 +39,7 @@ namespace ClinicManagementApp.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Manager,Receptionist")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAppointment(int id, AppointmentDto appointmentDto)
         {
@@ -51,6 +54,7 @@ namespace ClinicManagementApp.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Manager,Receptionist")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAppointment(int id)
         {
@@ -65,6 +69,7 @@ namespace ClinicManagementApp.Controllers
             }
         }
 
+        [Authorize(Roles = "Admin,Manager,Receptionist")]
         [HttpPost("mark-noshows")]
         public async Task<ActionResult<int>> MarkNoShows()
         {
@@ -72,6 +77,7 @@ namespace ClinicManagementApp.Controllers
             return Ok(count);
         }
 
+        [Authorize(Roles = "Admin,Manager,Receptionist")]
         [HttpPut("{id}/cancel")]
         public async Task<IActionResult> CancelAppointment(int id)
         {

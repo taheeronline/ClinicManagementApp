@@ -66,12 +66,16 @@ else
                         <td><span class="badge bg-light text-dark border">@doctor.Speciality</span></td>
                         <td>@doctor.ConsultationFee.ToString("C")</td>
                         <td class="text-end">
-                            <a href="/doctors/edit/@doctor.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit Doctor">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <button @onclick="() => DeleteDoctor(doctor.Id)" class="btn btn-sm btn-outline-danger" title="Delete Doctor">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <AuthorizeView Roles="Admin" Context="authContext">
+                                <Authorized>
+                                    <a href="/doctors/edit/@doctor.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit Doctor">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button @onclick="() => DeleteDoctor(doctor.Id)" class="btn btn-sm btn-outline-danger" title="Delete Doctor">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </Authorized>
+                            </AuthorizeView>
                         </td>
                     </tr>
                 }

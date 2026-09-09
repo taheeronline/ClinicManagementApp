@@ -70,12 +70,16 @@ else
                         </td>
                         <td><i class="bi bi-telephone text-muted me-1"></i> @patient.ContactNumber</td>
                         <td class="text-end">
-                            <a href="/patients/edit/@patient.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit Patient">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                            <button @onclick="() => DeletePatient(patient.Id)" class="btn btn-sm btn-outline-danger" title="Delete Patient">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <AuthorizeView Roles="Admin,Staff,Receptionist" Context="authContext">
+                                <Authorized>
+                                    <a href="/patients/edit/@patient.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit Patient">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button @onclick="() => DeletePatient(patient.Id)" class="btn btn-sm btn-outline-danger" title="Delete Patient">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </Authorized>
+                            </AuthorizeView>
                         </td>
                     </tr>
                 }

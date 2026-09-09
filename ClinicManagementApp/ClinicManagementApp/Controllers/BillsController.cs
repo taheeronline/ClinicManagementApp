@@ -1,12 +1,14 @@
 ﻿// ClinicManagementApp/Controllers/BillsController.cs
 using ClinicManagement.Shared.DTOs;
 using ClinicManagementApp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagementApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin,Manager")]
     public class BillsController : ControllerBase
     {
         private readonly IBillService _billService;

@@ -29,6 +29,7 @@ namespace ClinicManagementApp.Controllers
             return Ok(await _doctorService.GetDoctorByIdAsync(id));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<DoctorDto>> CreateDoctor(DoctorDto doctorDto)
         {
@@ -36,6 +37,7 @@ namespace ClinicManagementApp.Controllers
             return CreatedAtAction(nameof(GetDoctor), new { id = createdDoctor.Id }, createdDoctor);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDoctor(int id, DoctorDto doctorDto)
         {
@@ -43,6 +45,7 @@ namespace ClinicManagementApp.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDoctor(int id)
         {

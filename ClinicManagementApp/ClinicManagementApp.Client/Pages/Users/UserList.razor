@@ -62,8 +62,12 @@ else
                         </td>
                         <td class="text-muted small">@(user.LastLogin?.ToString("g") ?? "Never")</td>
                         <td class="text-end">
-                            <a href="/users/edit/@user.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                            <button @onclick="() => DeleteUser(user.Id)" class="btn btn-sm btn-outline-danger">Delete</button>
+                            <AuthorizeView Roles="Admin" Context="authContext">
+                                <Authorized>
+                                    <a href="/users/edit/@user.Id" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                    <button @onclick="() => DeleteUser(user.Id)" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </Authorized>
+                            </AuthorizeView>
                         </td>
                     </tr>
                 }

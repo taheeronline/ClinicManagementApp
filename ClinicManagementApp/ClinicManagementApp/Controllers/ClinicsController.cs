@@ -1,6 +1,7 @@
 ﻿// ClinicManagementApp/Controllers/ClinicController.cs
 using ClinicManagement.Shared.DTOs;
 using ClinicManagementApp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagementApp.Controllers
@@ -19,6 +20,7 @@ namespace ClinicManagementApp.Controllers
         [HttpGet]
         public async Task<ActionResult<ClinicDto>> GetClinic() => Ok(await _clinicService.GetClinicDetailsAsync());
 
+        [Authorize(Roles = "Admin")]
         [HttpPut]
         public async Task<IActionResult> UpdateClinic(ClinicDto clinicDto)
         {

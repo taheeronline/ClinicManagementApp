@@ -1,12 +1,14 @@
 ﻿// ClinicManagementApp/Controllers/PatientRecordsController.cs
 using ClinicManagement.Shared.DTOs;
 using ClinicManagementApp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClinicManagementApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin,Staff,Doctor")]
     public class PatientRecordsController : ControllerBase
     {
         private readonly IPatientRecordService _recordService;
@@ -31,7 +33,7 @@ namespace ClinicManagementApp.Controllers
         {
             return Ok(await _recordService.GetRecordDetailsAsync(id));
         }
-        
+
         [HttpPost]
         public async Task<ActionResult<PatientRecordDto>> CreateRecord(PatientRecordDto recordDto)
         {
