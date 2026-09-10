@@ -20,8 +20,8 @@
 <!-- ACTION BAR -->
 <div class="d-flex justify-content-between align-items-center mb-3">
 
-    <!-- ONLY STAFF/ADMIN CAN BOOK NEW APPOINTMENTS -->
-    <AuthorizeView Roles="Admin,Manager,Receptionist">
+    <!-- ONLY STAFF/ADMIN/MANAGER/RECEPTIONIST CAN BOOK NEW APPOINTMENTS -->
+    <AuthorizeView Roles="Admin,Manager,Receptionist,Staff">
         <Authorized>
             <a href="/appointments/edit" class="btn btn-primary fw-bold shadow-sm">+ Book New Appointment</a>
         </Authorized>
@@ -79,7 +79,7 @@ else
                             <span class="badge @GetStatusBadgeClass(appt.Status)">@appt.Status.ToString()</span>
                         </td>
                         <td class="text-end">
-                            <AuthorizeView Roles="Admin,Manager,Receptionist" Context="authContext">
+                            <AuthorizeView Roles="Admin,Manager,Receptionist,Staff" Context="authContext">
                                 <Authorized>
                                     @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
                                     {

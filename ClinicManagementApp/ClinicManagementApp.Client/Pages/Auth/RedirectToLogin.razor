@@ -3,6 +3,7 @@
 @code {
     protected override void OnInitialized()
     {
-        NavigationManager.NavigateTo("/login", forceLoad: true);
+        // Use client-side navigation without forceLoad for faster redirect
+        NavigationManager.NavigateTo("/login", forceLoad: false);
     }
 }

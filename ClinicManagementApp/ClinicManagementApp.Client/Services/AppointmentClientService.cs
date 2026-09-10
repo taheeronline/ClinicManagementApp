@@ -51,6 +51,12 @@ namespace ClinicManagement.Client.Services
         {
             if (!response.IsSuccessStatusCode)
             {
+                // Handle 401 Unauthorized - token may have expired or role mismatch
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    throw new UnauthorizedAccessException("Access denied. Please verify your permissions and try again, or log in again.");
+                }
+
                 var errorContent = await response.Content.ReadAsStringAsync();
                 string finalErrorMessage = "An error occurred while processing your request.";
 

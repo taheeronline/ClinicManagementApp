@@ -77,8 +77,9 @@
             var response = await AuthService.LoginAsync(loginDto);
             if (response.IsSuccessful)
             {
-                // Redirect to the home page (Dashboard) upon success
-                NavigationManager.NavigateTo("/", forceLoad: true);
+                // Use NavigateTo without forceLoad for faster navigation
+                // The AuthenticationState will update automatically via CustomAuthStateProvider
+                NavigationManager.NavigateTo("/");
             }
             else
             {
