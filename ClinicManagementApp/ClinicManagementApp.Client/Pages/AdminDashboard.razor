@@ -184,7 +184,6 @@
                                             <th>Patient</th>
                                             <th>Doctor</th>
                                             <th>Status</th>
-                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -196,18 +195,6 @@
                                                 <td>@appt.DoctorName</td>
                                                 <td>
                                                     <span class="badge @GetStatusBadgeClass(appt.Status)">@appt.Status.ToString()</span>
-                                                </td>
-                                                <td>
-                                                    @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
-                                                    {
-                                                        <!-- View Consultation -->
-                                                        <a href="/patientrecords/edit/@appt.Id" class="btn btn-sm btn-outline-primary" title="Start Consultation">Consult</a>
-                                                    }
-                                                    else
-                                                    {
-                                                        <!-- View button for locked appointments -->
-                                                        <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-outline-secondary">View</a>
-                                                    }
                                                 </td>
                                             </tr>
                                         }

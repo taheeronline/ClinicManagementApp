@@ -2,6 +2,7 @@
 @using System.Security.Claims
 @inject ClinicManagement.Client.Services.AppointmentClientService AppointmentService
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
 
 <div class="alert alert-info shadow-sm mt-3">
     <h4><i class="bi bi-person-badge"></i> Doctor Portal</h4>
@@ -10,30 +11,81 @@
 
 @if (isLoading)
 {
-    <p>Loading your schedule...</p>
+    <div class="d-flex flex-column align-items-center justify-content-center mt-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Loading your schedule...</p>
+    </div>
 }
 else
 {
-    <div class="card mt-4">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">My Schedule for Today</h5>
+    <div class="card mt-4 shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-calendar-day"></i> My Schedule for Today</h5>
+            <small class="text-white-50">@todaysAppointments.Count appointment(s)</small>
         </div>
-        <ul class="list-group list-group-flush">
+        <div class="card-body">
             @if (!todaysAppointments.Any())
             {
-                <li class="list-group-item text-muted">No appointments today.</li>
+                <div class="text-muted text-center py-4">
+                    <i class="bi bi-calendar-x fs-3 d-block mb-2"></i>
+                    <p>No appointments scheduled for today.</p>
+                </div>
             }
             else
             {
-                @foreach (var appt in todaysAppointments)
-                {
-                    <li class="list-group-item d-flex justify-content-between">
-                        <span><strong>@appt.AppointmentDate.ToString("hh:mm tt")</strong> - @appt.PatientName</span>
-                        <span class="badge bg-primary">@appt.Status.ToString()</span>
-                    </li>
-                }
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time</th>
+                                <th>Patient Name</th>
+                                <th>Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appt in todaysAppointments)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@appt.AppointmentDate.ToString("hh:mm tt")</strong>
+                                    </td>
+                                    <td>
+                                        @appt.PatientName
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetStatusBadgeClass(appt.Status)">@appt.Status.ToString()</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled)
+                                        {
+                                            <!-- Consult button for scheduled appointments -->
+                                            <a href="/patientrecords/edit/@appt.Id" class="btn btn-sm btn-success" title="Start Consultation">
+                                                <i class="bi bi-stethoscope me-1"></i> Consult
+                                            </a>
+                                        }
+                                        else if (appt.Status == ClinicManagement.Shared.Enums.AppointmentStatus.Completed)
+                                        {
+                                            <!-- View button for completed appointments -->
+                                            <a href="/patientrecords/view/@appt.Id" class="btn btn-sm btn-outline-secondary" title="View Consultation Record">
+                                                <i class="bi bi-eye me-1"></i> Review
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <!-- View button for other statuses -->
+                                            <a href="/appointments/edit/@appt.Id" class="btn btn-sm btn-outline-secondary" title="View Appointment Details">
+                                                <i class="bi bi-info-circle me-1"></i> View
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
-        </ul>
+        </div>
     </div>
 }
 
@@ -62,5 +114,17 @@ else
             }
         }
         isLoading = false;
+    }
+
+    private string GetStatusBadgeClass(ClinicManagement.Shared.Enums.AppointmentStatus status)
+    {
+        return status switch
+        {
+            ClinicManagement.Shared.Enums.AppointmentStatus.Scheduled => "bg-success",
+            ClinicManagement.Shared.Enums.AppointmentStatus.Completed => "bg-info",
+            ClinicManagement.Shared.Enums.AppointmentStatus.Cancelled => "bg-danger",
+            ClinicManagement.Shared.Enums.AppointmentStatus.NoShow => "bg-warning",
+            _ => "bg-secondary"
+        };
     }
 }

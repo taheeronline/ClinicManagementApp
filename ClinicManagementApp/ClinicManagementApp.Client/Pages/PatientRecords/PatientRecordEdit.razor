@@ -2,8 +2,6 @@
 @page "/patientrecords/edit/{AppointmentId:int}"
 @using Microsoft.AspNetCore.Authorization
 @using ClinicManagement.Shared.DTOs
-@* STRICT DOCTOR ONLY ACCESS *@
-@attribute [Authorize(Roles = "Doctor")]
 @inject ClinicManagement.Client.Services.PatientRecordClientService RecordService
 @inject NavigationManager NavigationManager
 @rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
