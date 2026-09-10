@@ -1,0 +1,171 @@
+@* Public Home Page for Unauthenticated Users *@
+@inject ClinicManagement.Client.Services.ClinicClientService ClinicService
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<PageTitle>Welcome to Our Clinic</PageTitle>
+
+<div class="container-fluid p-0">
+    <!-- Hero Section with Scrolling Marquee -->
+    <div class="bg-gradient text-white py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1 class="display-4 fw-bold mb-3">@clinicName</h1>
+                    <p class="lead mb-4">@clinicDescription</p>
+                    <p class="text-white-50 fst-italic">
+                        <i class="bi bi-clock me-2"></i>Professional Healthcare Services
+                    </p>
+                </div>
+                <div class="col-md-6 text-center">
+                    <div class="bg-white bg-opacity-10 p-5 rounded-3" style="backdrop-filter: blur(10px);">
+                        <i class="bi bi-hospital text-white" style="font-size: 5rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrolling Clinic Information Marquee -->
+    <div class="bg-light py-4 overflow-hidden border-bottom">
+        <div class="marquee-container">
+            <div class="marquee-content">
+                <span class="marquee-item mx-5">
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    <strong>Expert Medical Staff</strong>
+                </span>
+                <span class="marquee-item mx-5">
+                    <i class="bi bi-clock-history text-info me-2"></i>
+                    <strong>Extended Hours Available</strong>
+                </span>
+                <span class="marquee-item mx-5">
+                    <i class="bi bi-shield-check text-primary me-2"></i>
+                    <strong>Patient Data Security</strong>
+                </span>
+                <span class="marquee-item mx-5">
+                    <i class="bi bi-telephone text-danger me-2"></i>
+                    <strong>Emergency Services</strong>
+                </span>
+                <span class="marquee-item mx-5">
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    <strong>Expert Medical Staff</strong>
+                </span>
+                <span class="marquee-item mx-5">
+                    <i class="bi bi-clock-history text-info me-2"></i>
+                    <strong>Extended Hours Available</strong>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clinic Information Cards -->
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm border-0 text-center">
+                    <div class="card-body p-4">
+                        <i class="bi bi-person-md text-primary" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Specialist Doctors</h5>
+                        <p class="card-text text-muted">
+                            Our experienced team of medical professionals is dedicated to providing you with the best healthcare.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm border-0 text-center">
+                    <div class="card-body p-4">
+                        <i class="bi bi-calendar-check text-success" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Easy Appointments</h5>
+                        <p class="card-text text-muted">
+                            Schedule your appointments online with just a few clicks. Manage your healthcare with convenience.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow-sm border-0 text-center">
+                    <div class="card-body p-4">
+                        <i class="bi bi-heart-pulse text-danger" style="font-size: 2.5rem;"></i>
+                        <h5 class="card-title mt-3">Quality Care</h5>
+                        <p class="card-text text-muted">
+                            We prioritize your health and well-being with compassionate, evidence-based medical care.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="bg-light py-5 border-top">
+        <div class="container text-center">
+            <h3 class="mb-4">Ready to Schedule Your Appointment?</h3>
+            <p class="text-muted mb-4">Sign in to your account or create a new one to get started.</p>
+            <a href="/login" class="btn btn-primary btn-lg me-3 shadow-sm">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Marquee Animation */
+    .marquee-container {
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .marquee-content {
+        display: flex;
+        animation: scroll 20s linear infinite;
+        white-space: nowrap;
+    }
+
+    .marquee-item {
+        flex-shrink: 0;
+        font-size: 1.1rem;
+    }
+
+    @@keyframes scroll {
+        0% {
+            transform: translateX(100%);
+        }
+        100% {
+            transform: translateX(-100%);
+        }
+    }
+
+    .marquee-content:hover {
+        animation-play-state: paused;
+    }
+
+    .bg-gradient {
+        position: relative;
+    }
+</style>
+
+@code {
+    private string clinicName = "Clinic Management System";
+    private string clinicDescription = "Providing comprehensive healthcare services with a commitment to excellence and patient care.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var clinic = await ClinicService.GetClinicDetailsAsync();
+            if (clinic != null)
+            {
+                clinicName = string.IsNullOrWhiteSpace(clinic.Name) ? "Our Clinic" : clinic.Name;
+                clinicDescription = string.IsNullOrWhiteSpace(clinic.Address) 
+                    ? "Providing comprehensive healthcare services with a commitment to excellence and patient care."
+                    : $"Located at {clinic.Address}. Providing comprehensive healthcare services with a commitment to excellence and patient care.";
+            }
+        }
+        catch (Exception)
+        {
+            // Gracefully handle errors - display default content
+            clinicName = "Welcome to Our Clinic";
+            clinicDescription = "Providing comprehensive healthcare services with a commitment to excellence and patient care.";
+        }
+    }
+}

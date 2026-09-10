@@ -1,0 +1,59 @@
+@* Public Home Layout - For unauthenticated pages *@
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<!-- Simplified navbar for public pages -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm" style="z-index: 1000;">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center m-0" href="/">
+            <i class="bi bi-heart-pulse-fill text-danger fs-4 me-2"></i>
+            <span class="fw-bold">Clinic CMS</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/login">Login</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content Area -->
+<main>
+    @Body
+</main>
+
+<!-- Footer -->
+<footer class="bg-dark text-white text-center py-4 mt-5 border-top">
+    <div class="container-fluid">
+        <p class="mb-1">&copy; 2024 Clinic Management System. All rights reserved.</p>
+        <p class="text-muted small">Secure & Confidential Patient Care</p>
+    </div>
+</footer>
+
+<style>
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    main {
+        flex: 1;
+    }
+
+    footer {
+        margin-top: auto;
+    }
+</style>
